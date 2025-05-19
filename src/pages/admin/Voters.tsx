@@ -10,6 +10,7 @@ import { Plus, Download, RefreshCw, Trash2, Copy, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +24,14 @@ import { Voter } from '@/services/types';
 const Voters = () => {
   const [isGeneratingDialog, setIsGeneratingDialog] = useState(false);
   const [codeCount, setCodeCount] = useState(5);
+  const [selectedElection, setSelectedElection] = useState<string>('');
   const queryClient = useQueryClient();
+  
+  // Get all elections for the dropdown
+  const { data: elections, isLoading: isLoadingElections } = useQuery({
+    queryKey: ['elections'],
+    queryFn: api.getElections,
+  });
   
   const { data: voters, isLoading } = useQuery({
     queryKey: ['voters'],
@@ -31,7 +39,7 @@ const Voters = () => {
   });
 
   const addVoterMutation = useMutation({
-    mutationFn: api.addVoter,
+    mutationFn: (electionId: string) => api.addVoter(electionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['voters'] });
       toast({
@@ -82,8 +90,9 @@ const Voters = () => {
   });
 
   const generateCodesMutation = useMutation({
-    mutationFn: api.generateCodes,
-    onSuccess: (codes) => {
+    mutationFn: ({ count, electionId }: { count: number, electionId: string }) => 
+      api.generateCodes(count, electionId),
+    onSuccess: (codes, { electionId }) => {
       toast({
         title: "Codes generated",
         description: `${codes.length} new codes have been generated.`,
@@ -93,12 +102,12 @@ const Voters = () => {
       // Add log entry for code generation
       logActionMutation.mutate({
         action: 'GENERATE_CODES',
-        details: `Generated ${codes.length} new voter codes`
+        details: `Generated ${codes.length} new voter codes for election ID: ${electionId}`
       });
       
       // Add voters with generated codes
       codes.forEach(() => {
-        addVoterMutation.mutate();
+        addVoterMutation.mutate(electionId);
       });
     },
   });
@@ -123,8 +132,10 @@ const Voters = () => {
   
   // Mutation for logging actions
   const logActionMutation = useMutation({
-    mutationFn: ({ action, details }: { action: string, details: string }) => 
-      api.addLog('admin-1', 'Admin User', action, details),
+    mutationFn: ({ action, details }: { action: string, details: string }) => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      return api.addLog(user.id || 'unknown', user.name || 'Unknown Admin', action, details);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logs'] });
     },
@@ -140,11 +151,29 @@ const Voters = () => {
   };
 
   const handleGenerateCodes = () => {
-    generateCodesMutation.mutate(codeCount);
+    if (!selectedElection) {
+      toast({
+        title: "Error",
+        description: "Please select an election first",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    generateCodesMutation.mutate({ count: codeCount, electionId: selectedElection });
   };
 
   const handleAddVoter = () => {
-    addVoterMutation.mutate();
+    if (!selectedElection) {
+      toast({
+        title: "Error",
+        description: "Please select an election first",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    addVoterMutation.mutate(selectedElection);
   };
 
   const handleDeleteVoter = (id: string) => {
@@ -157,6 +186,37 @@ const Voters = () => {
   
   const handleToggleShared = (id: string, currentStatus: boolean) => {
     toggleSharedStatusMutation.mutate({ id, shared: !currentStatus });
+  };
+  
+  const exportVoterCodes = () => {
+    if (!voters || voters.length === 0) {
+      toast({
+        title: "Error",
+        description: "No voter codes to export",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    let csv = 'Voter ID,One-Time Code,Has Voted,Shared\n';
+    voters.forEach(voter => {
+      csv += `${voter.id},${voter.oneTimeCode || 'None'},${voter.hasVoted ? 'Yes' : 'No'},${voter.shared ? 'Yes' : 'No'}\n`;
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', `voter-codes-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    logActionMutation.mutate({
+      action: 'EXPORT_VOTER_CODES',
+      details: `Exported ${voters.length} voter codes`
+    });
   };
 
   return (
@@ -172,7 +232,7 @@ const Voters = () => {
             <Button variant="outline" onClick={() => setIsGeneratingDialog(true)}>
               Generate Codes
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={exportVoterCodes}>
               <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
@@ -180,8 +240,26 @@ const Voters = () => {
         </div>
         
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Voter Management</CardTitle>
+            <div className="w-[200px]">
+              <Select onValueChange={setSelectedElection} value={selectedElection}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Election" />
+                </SelectTrigger>
+                <SelectContent>
+                  {isLoadingElections ? (
+                    <SelectItem value="loading" disabled>Loading...</SelectItem>
+                  ) : elections?.length === 0 ? (
+                    <SelectItem value="none" disabled>No elections available</SelectItem>
+                  ) : (
+                    elections?.map(election => (
+                      <SelectItem key={election.id} value={election.id}>{election.title}</SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border">
@@ -272,23 +350,45 @@ const Voters = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <div className="flex items-center space-x-2">
-              <input
-                type="number"
-                min={1}
-                max={100}
-                value={codeCount}
-                onChange={(e) => setCodeCount(parseInt(e.target.value, 10) || 1)}
-                className="w-24 px-3 py-2 border border-input rounded-md"
-              />
-              <span className="text-sm text-muted-foreground">codes</span>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Election</label>
+                <Select onValueChange={setSelectedElection} value={selectedElection}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select Election" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingElections ? (
+                      <SelectItem value="loading" disabled>Loading...</SelectItem>
+                    ) : elections?.length === 0 ? (
+                      <SelectItem value="none" disabled>No elections available</SelectItem>
+                    ) : (
+                      elections?.map(election => (
+                        <SelectItem key={election.id} value={election.id}>{election.title}</SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-medium">Number of codes:</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={codeCount}
+                  onChange={(e) => setCodeCount(parseInt(e.target.value, 10) || 1)}
+                  className="w-24 px-3 py-2 border border-input rounded-md"
+                />
+                <span className="text-sm text-muted-foreground">codes</span>
+              </div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsGeneratingDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleGenerateCodes}>
+            <Button onClick={handleGenerateCodes} disabled={!selectedElection}>
               Generate
             </Button>
           </DialogFooter>

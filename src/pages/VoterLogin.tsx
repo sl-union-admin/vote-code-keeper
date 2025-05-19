@@ -37,7 +37,14 @@ const VoterLogin = () => {
           title: "Success",
           description: "You have been logged in successfully",
         });
-        navigate('/elections');
+        
+        // User object will have electionId that the voter needs to vote on
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        if (userData.electionId) {
+          navigate(`/elections/${userData.electionId}`);
+        } else {
+          navigate('/elections');
+        }
       } else {
         toast({
           title: "Authentication Failed",

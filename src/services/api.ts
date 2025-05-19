@@ -19,4 +19,5 @@ export const api = {
   
   // Add missing functions
   toggleSharedStatus: voterService.toggleSharedStatus,
+  validateVoterCode: voterService.validateVoterCode,
 };

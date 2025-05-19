@@ -1,11 +1,11 @@
 
 import { LogEntry } from './types';
-import { mockLogs } from './mockData';
+import { storage } from './auth';
 
 export const logService = {
   getLogs: async (): Promise<LogEntry[]> => {
     return new Promise((resolve) => {
-      setTimeout(() => resolve([...mockLogs]), 300);
+      setTimeout(() => resolve(storage.getLogs()), 300);
     });
   },
   
@@ -18,7 +18,7 @@ export const logService = {
       action,
       details
     };
-    mockLogs.unshift(newLog); // Add to the beginning for chronological order
+    storage.addLog(newLog);
     return new Promise((resolve) => {
       setTimeout(() => resolve(newLog), 300);
     });

@@ -1,68 +1,70 @@
 
 import { Voter } from './types';
-import { mockVoters } from './mockData';
+import { storage } from './auth';
 
 export const voterService = {
   getVoters: async (): Promise<Voter[]> => {
     return new Promise((resolve) => {
-      setTimeout(() => resolve([...mockVoters]), 300);
+      setTimeout(() => resolve(storage.getVoters()), 300);
     });
   },
   
-  addVoter: async (): Promise<Voter> => {
+  getVotersByElection: async (electionId: string): Promise<Voter[]> => {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(storage.getVotersByElection(electionId)), 300);
+    });
+  },
+  
+  addVoter: async (electionId: string): Promise<Voter> => {
     const newVoter = {
       id: 'voter-' + Date.now(),
       hasVoted: false,
       oneTimeCode: Math.floor(100000 + Math.random() * 900000).toString(),
       shared: false,
     };
-    mockVoters.push(newVoter);
+    storage.addVoter(newVoter, electionId);
     return new Promise((resolve) => {
       setTimeout(() => resolve(newVoter), 300);
     });
   },
   
   deleteVoter: async (id: string): Promise<boolean> => {
-    const index = mockVoters.findIndex(v => v.id === id);
-    if (index !== -1) {
-      mockVoters.splice(index, 1);
-      return new Promise((resolve) => {
-        setTimeout(() => resolve(true), 300);
-      });
-    }
-    return false;
+    const result = storage.deleteVoter(id);
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(result), 300);
+    });
   },
   
-  generateCodes: async (count: number): Promise<string[]> => {
-    const codes = Array.from({ length: count }, () => 
-      Math.floor(100000 + Math.random() * 900000).toString()
-    );
+  generateCodes: async (count: number, electionId: string): Promise<string[]> => {
+    const codes: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      codes.push(code);
+    }
     return new Promise((resolve) => {
       setTimeout(() => resolve(codes), 300);
     });
   },
   
   regenerateCode: async (id: string): Promise<string> => {
-    const voter = mockVoters.find(v => v.id === id);
-    if (voter) {
-      const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-      voter.oneTimeCode = newCode;
-      voter.shared = false; // Reset the shared status when regenerating code
-      return new Promise((resolve) => {
-        setTimeout(() => resolve(newCode), 300);
-      });
-    }
-    return '';
+    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const result = storage.regenerateVoterCode(id, newCode);
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(result || ''), 300);
+    });
   },
   
   toggleSharedStatus: async (id: string, shared: boolean): Promise<boolean> => {
-    const voter = mockVoters.find(v => v.id === id);
-    if (voter) {
-      voter.shared = shared;
-      return new Promise((resolve) => {
-        setTimeout(() => resolve(true), 300);
-      });
-    }
-    return false;
+    const result = storage.toggleVoterShared(id, shared);
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(result), 300);
+    });
+  },
+  
+  validateVoterCode: async (code: string): Promise<{ valid: boolean; voterId: string | null; electionId: string | null }> => {
+    const result = storage.validateVoterCode(code);
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(result), 300);
+    });
   },
 };

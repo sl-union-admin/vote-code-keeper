@@ -1,5 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { authenticateAdmin } from '@/services/auth';
+import { api } from '@/services/api';
 
 // Types
 export type UserRole = 'voter' | 'admin' | 'super_admin';
@@ -20,6 +22,7 @@ export interface User {
   email?: string;
   name?: string;
   permissions?: AdminPermissions;
+  electionId?: string; // For voters, to know which election they're voting in
 }
 
 interface AuthContextType {
@@ -63,67 +66,43 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     setIsLoading(true);
     
     try {
-      // In a real app, this would be an API call to verify the code or credentials
-      let userData: User;
-      
       if (typeof codeOrCredentials === 'string') {
         // Voter login with one-time code
-        // Mocking a successful login response for demo purposes
-        userData = {
-          id: 'v_' + Math.random().toString(36).substr(2, 9),
-          role: 'voter',
-        };
-      } else {
-        // Admin login with email/password from environment variables
-        const { email, password } = codeOrCredentials;
+        const result = await api.validateVoterCode(codeOrCredentials);
         
-        // Check if the email and password match the admin credentials defined in the environment
-        const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
-        const adminPassword = process.env.ADMIN_PASSWORD || 'SecurePassword123!';
-        const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'superadmin@example.com';
-        const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'SuperSecurePassword456!';
-        
-        if (email === adminEmail && password === adminPassword) {
-          userData = {
-            id: 'a_' + Math.random().toString(36).substr(2, 9),
-            role: 'admin',
-            email: email,
-            name: 'Admin User',
-            permissions: {
-              canCreateElections: true,
-              canEditElections: true,
-              canDeleteElections: false,
-              canManageVoters: true,
-              canManageAdmins: false,
-              canViewLogs: true,
-              canChangeSettings: false,
-            }
+        if (result.valid && result.voterId && result.electionId) {
+          // Successful voter login
+          const userData: User = {
+            id: result.voterId,
+            role: 'voter',
+            electionId: result.electionId
           };
-        } else if (email === superAdminEmail && password === superAdminPassword) {
-          userData = {
-            id: 'sa_' + Math.random().toString(36).substr(2, 9),
-            role: 'super_admin',
-            email: email,
-            name: 'Super Admin',
-            permissions: {
-              canCreateElections: true,
-              canEditElections: true,
-              canDeleteElections: true,
-              canManageVoters: true,
-              canManageAdmins: true,
-              canViewLogs: true,
-              canChangeSettings: true,
-            }
-          };
-        } else {
-          return false;
+          
+          localStorage.setItem('user', JSON.stringify(userData));
+          setUser(userData);
+          return true;
         }
+        return false;
+      } else {
+        // Admin login with email/password
+        const { email, password } = codeOrCredentials;
+        const adminUser = await authenticateAdmin(email, password);
+        
+        if (adminUser) {
+          // Log successful admin login
+          await api.addLog(
+            adminUser.id, 
+            adminUser.name, 
+            'LOGIN', 
+            `Admin user ${adminUser.name} logged in`
+          );
+          
+          localStorage.setItem('user', JSON.stringify(adminUser));
+          setUser(adminUser);
+          return true;
+        }
+        return false;
       }
-      
-      // Save to localStorage for persistence
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-      return true;
     } catch (error) {
       console.error('Login error:', error);
       return false;
@@ -132,7 +111,21 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    if (user && (user.role === 'admin' || user.role === 'super_admin')) {
+      // Log admin logout
+      try {
+        await api.addLog(
+          user.id, 
+          user.name || 'Admin', 
+          'LOGOUT', 
+          `Admin user ${user.name || 'Admin'} logged out`
+        );
+      } catch (error) {
+        console.error('Error logging logout:', error);
+      }
+    }
+    
     localStorage.removeItem('user');
     setUser(null);
   };

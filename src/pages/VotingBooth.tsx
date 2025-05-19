@@ -30,6 +30,17 @@ const VotingBooth = () => {
       return;
     }
     
+    // Make sure the voter is accessing their assigned election
+    if (user?.electionId && electionId && user.electionId !== electionId) {
+      toast({
+        title: "Access Denied",
+        description: "You are not authorized to access this election.",
+        variant: "destructive",
+      });
+      navigate(`/elections/${user.electionId}`);
+      return;
+    }
+    
     const fetchElection = async () => {
       if (!electionId) return;
       
@@ -45,7 +56,7 @@ const VotingBooth = () => {
               description: "This election is no longer active",
               variant: "destructive",
             });
-            navigate('/elections');
+            navigate('/voter-login');
             return;
           }
           
@@ -56,7 +67,7 @@ const VotingBooth = () => {
             description: "Election not found",
             variant: "destructive",
           });
-          navigate('/elections');
+          navigate('/voter-login');
         }
       } catch (error) {
         toast({
@@ -146,7 +157,7 @@ const VotingBooth = () => {
         <div className="container mx-auto px-4 py-12">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Election Not Found</h1>
-            <Button onClick={() => navigate('/elections')}>Return to Elections</Button>
+            <Button onClick={() => navigate('/voter-login')}>Return to Login</Button>
           </div>
         </div>
       </Layout>
@@ -173,7 +184,13 @@ const VotingBooth = () => {
               </div>
             </CardContent>
             <CardFooter className="flex justify-center">
-              <Button onClick={() => navigate('/elections')}>Return to Elections</Button>
+              <Button onClick={() => {
+                // Log out the voter after they've cast their vote
+                localStorage.removeItem('user');
+                navigate('/');
+              }}>
+                Exit
+              </Button>
             </CardFooter>
           </Card>
         </div>
@@ -223,7 +240,13 @@ const VotingBooth = () => {
               Your vote is anonymous and secure
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => navigate('/elections')}>Cancel</Button>
+              <Button variant="outline" onClick={() => {
+                // Log out the voter 
+                localStorage.removeItem('user');
+                navigate('/');
+              }}>
+                Cancel
+              </Button>
               <Button 
                 onClick={handleConfirmVote} 
                 disabled={!selectedCandidate || isSubmitting}
