@@ -74,13 +74,20 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
           role: 'voter',
         };
       } else {
-        // Admin login with email/password
-        // Mocking different admin types for demo purposes
-        if (codeOrCredentials.email === 'admin@example.com') {
+        // Admin login with email/password from environment variables
+        const { email, password } = codeOrCredentials;
+        
+        // Check if the email and password match the admin credentials defined in the environment
+        const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
+        const adminPassword = process.env.ADMIN_PASSWORD || 'SecurePassword123!';
+        const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'superadmin@example.com';
+        const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'SuperSecurePassword456!';
+        
+        if (email === adminEmail && password === adminPassword) {
           userData = {
             id: 'a_' + Math.random().toString(36).substr(2, 9),
             role: 'admin',
-            email: codeOrCredentials.email,
+            email: email,
             name: 'Admin User',
             permissions: {
               canCreateElections: true,
@@ -92,11 +99,11 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
               canChangeSettings: false,
             }
           };
-        } else {
+        } else if (email === superAdminEmail && password === superAdminPassword) {
           userData = {
             id: 'sa_' + Math.random().toString(36).substr(2, 9),
             role: 'super_admin',
-            email: codeOrCredentials.email,
+            email: email,
             name: 'Super Admin',
             permissions: {
               canCreateElections: true,
@@ -108,6 +115,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
               canChangeSettings: true,
             }
           };
+        } else {
+          return false;
         }
       }
       

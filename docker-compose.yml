@@ -14,21 +14,25 @@ services:
     depends_on:
       - db
     environment:
-      - DATABASE_URL=postgres://user:password@db:5432/votedb
+      - DATABASE_URL=${DATABASE_URL}
       - NODE_ENV=development
-      - MAIL_HOST=mailhog
-      - MAIL_PORT=1025
-      - MAIL_FROM=noreply@votesystem.com
-      - JWT_SECRET=your_jwt_secret_key_change_in_production
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_FROM=${MAIL_FROM}
+      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL}
+      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD}
 
   db:
     image: postgres:14
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_USER=user
-      - POSTGRES_DB=votedb
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_DB=${DB_NAME}
     ports:
       - "5432:5432"
 

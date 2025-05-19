@@ -22,7 +22,6 @@ export interface Candidate {
 
 export interface Voter {
   id: string;
-  email: string;
   hasVoted: boolean;
   oneTimeCode?: string;
 }

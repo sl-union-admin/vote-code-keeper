@@ -9,9 +9,8 @@ export const voterService = {
     });
   },
   
-  addVoter: async (voter: Omit<Voter, 'id' | 'hasVoted' | 'oneTimeCode'>): Promise<Voter> => {
+  addVoter: async (): Promise<Voter> => {
     const newVoter = {
-      ...voter,
       id: 'voter-' + Date.now(),
       hasVoted: false,
       oneTimeCode: Math.floor(100000 + Math.random() * 900000).toString(),
@@ -22,6 +21,17 @@ export const voterService = {
     });
   },
   
+  deleteVoter: async (id: string): Promise<boolean> => {
+    const index = mockVoters.findIndex(v => v.id === id);
+    if (index !== -1) {
+      mockVoters.splice(index, 1);
+      return new Promise((resolve) => {
+        setTimeout(() => resolve(true), 300);
+      });
+    }
+    return false;
+  },
+  
   generateCodes: async (count: number): Promise<string[]> => {
     const codes = Array.from({ length: count }, () => 
       Math.floor(100000 + Math.random() * 900000).toString()
@@ -29,5 +39,17 @@ export const voterService = {
     return new Promise((resolve) => {
       setTimeout(() => resolve(codes), 300);
     });
+  },
+  
+  regenerateCode: async (id: string): Promise<string> => {
+    const voter = mockVoters.find(v => v.id === id);
+    if (voter) {
+      const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+      voter.oneTimeCode = newCode;
+      return new Promise((resolve) => {
+        setTimeout(() => resolve(newCode), 300);
+      });
+    }
+    return '';
   },
 };
