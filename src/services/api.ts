@@ -15,5 +15,8 @@ export const api = {
   ...voterService,
   ...adminService,
   ...logService,
-  ...voteService
+  ...voteService,
+  
+  // Add missing functions
+  toggleSharedStatus: voterService.toggleSharedStatus,
 };

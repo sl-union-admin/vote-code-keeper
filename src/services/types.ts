@@ -24,6 +24,7 @@ export interface Voter {
   id: string;
   hasVoted: boolean;
   oneTimeCode?: string;
+  shared?: boolean; // New field to track if code has been shared
 }
 
 export interface AdminUser {

@@ -14,6 +14,7 @@ export const voterService = {
       id: 'voter-' + Date.now(),
       hasVoted: false,
       oneTimeCode: Math.floor(100000 + Math.random() * 900000).toString(),
+      shared: false,
     };
     mockVoters.push(newVoter);
     return new Promise((resolve) => {
@@ -46,10 +47,22 @@ export const voterService = {
     if (voter) {
       const newCode = Math.floor(100000 + Math.random() * 900000).toString();
       voter.oneTimeCode = newCode;
+      voter.shared = false; // Reset the shared status when regenerating code
       return new Promise((resolve) => {
         setTimeout(() => resolve(newCode), 300);
       });
     }
     return '';
+  },
+  
+  toggleSharedStatus: async (id: string, shared: boolean): Promise<boolean> => {
+    const voter = mockVoters.find(v => v.id === id);
+    if (voter) {
+      voter.shared = shared;
+      return new Promise((resolve) => {
+        setTimeout(() => resolve(true), 300);
+      });
+    }
+    return false;
   },
 };

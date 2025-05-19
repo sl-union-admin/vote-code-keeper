@@ -89,11 +89,11 @@ export const mockElections: Election[] = [
 
 // Mock voters data - removed email fields to make voters anonymous
 export const mockVoters: Voter[] = [
-  { id: 'voter-1', hasVoted: true, oneTimeCode: '123456' },
-  { id: 'voter-2', hasVoted: false, oneTimeCode: '234567' },
-  { id: 'voter-3', hasVoted: false, oneTimeCode: '345678' },
-  { id: 'voter-4', hasVoted: true, oneTimeCode: '456789' },
-  { id: 'voter-5', hasVoted: false, oneTimeCode: '567890' }
+  { id: 'voter-1', hasVoted: true, oneTimeCode: '123456', shared: false },
+  { id: 'voter-2', hasVoted: false, oneTimeCode: '234567', shared: true },
+  { id: 'voter-3', hasVoted: false, oneTimeCode: '345678', shared: false },
+  { id: 'voter-4', hasVoted: true, oneTimeCode: '456789', shared: true },
+  { id: 'voter-5', hasVoted: false, oneTimeCode: '567890', shared: false }
 ];
 
 // Mock admin users

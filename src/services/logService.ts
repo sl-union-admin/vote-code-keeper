@@ -18,7 +18,7 @@ export const logService = {
       action,
       details
     };
-    mockLogs.unshift(newLog);
+    mockLogs.unshift(newLog); // Add to the beginning for chronological order
     return new Promise((resolve) => {
       setTimeout(() => resolve(newLog), 300);
     });

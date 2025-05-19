@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate, Link } from 'react-router-dom';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { format } from 'date-fns';
 import { Plus } from 'lucide-react';
 
 const Elections = () => {
+  const navigate = useNavigate();
   const { data: elections, isLoading } = useQuery({
     queryKey: ['elections'],
     queryFn: api.getElections,
@@ -24,7 +26,7 @@ const Elections = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Elections</h1>
-          <Button>
+          <Button onClick={() => navigate('/admin/elections/create')}>
             <Plus className="mr-2 h-4 w-4" />
             New Election
           </Button>
@@ -54,8 +56,12 @@ const Elections = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between">
-                  <Button variant="outline">View</Button>
-                  <Button variant="outline">Edit</Button>
+                  <Button variant="outline" onClick={() => navigate(`/admin/elections/${election.id}`)}>
+                    View
+                  </Button>
+                  <Button variant="outline" onClick={() => navigate(`/admin/elections/${election.id}`)}>
+                    Edit
+                  </Button>
                 </CardFooter>
               </Card>
             ))
