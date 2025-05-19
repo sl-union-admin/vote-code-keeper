@@ -11,6 +11,8 @@ import { api } from '@/services/api';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/components/ui/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Plus } from 'lucide-react';
 
 interface EmailSettingsForm {
   adminEmail: string;
