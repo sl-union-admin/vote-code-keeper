@@ -1,4 +1,3 @@
-
 // This file would contain actual API calls in a production environment
 // For now, we'll use mock data
 
@@ -19,6 +18,7 @@ export interface Candidate {
   biography?: string;
   photoUrl?: string;
   voteCount?: number;
+  description?: string; // Added description property as optional
 }
 
 export interface Voter {
