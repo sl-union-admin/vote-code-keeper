@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -82,10 +81,15 @@ const ElectionDetail = () => {
     mutationFn: (candidate: Partial<Candidate>) => {
       if (!election) throw new Error("No election found");
       
-      const newCandidate = {
+      // Ensure the new candidate has all required properties
+      const newCandidate: Candidate = {
         id: 'candidate-' + Date.now(),
-        voteCount: 0,
-        ...candidate
+        name: candidate.name || '', // Ensure name is provided (required by Candidate interface)
+        party: candidate.party,
+        biography: candidate.biography,
+        photoUrl: candidate.photoUrl,
+        voteCount: candidate.voteCount || 0,
+        description: candidate.description
       };
       
       const updatedCandidates = [...election.candidates, newCandidate];

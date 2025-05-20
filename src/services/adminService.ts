@@ -1,11 +1,13 @@
 
 import { AdminUser } from './types';
-import { mockAdmins } from './mockData';
+
+// In-memory storage for admins until we connect to a real backend
+const admins: AdminUser[] = [];
 
 export const adminService = {
   getAdmins: async (): Promise<AdminUser[]> => {
     return new Promise((resolve) => {
-      setTimeout(() => resolve([...mockAdmins]), 300);
+      setTimeout(() => resolve([...admins]), 300);
     });
   },
   
@@ -14,18 +16,18 @@ export const adminService = {
       ...admin,
       id: 'admin-' + Date.now(),
     };
-    mockAdmins.push(newAdmin);
+    admins.push(newAdmin);
     return new Promise((resolve) => {
       setTimeout(() => resolve(newAdmin), 300);
     });
   },
   
   updateAdmin: async (id: string, updates: Partial<AdminUser>): Promise<AdminUser | undefined> => {
-    const index = mockAdmins.findIndex(a => a.id === id);
+    const index = admins.findIndex(a => a.id === id);
     if (index !== -1) {
-      mockAdmins[index] = { ...mockAdmins[index], ...updates };
+      admins[index] = { ...admins[index], ...updates };
       return new Promise((resolve) => {
-        setTimeout(() => resolve(mockAdmins[index]), 300);
+        setTimeout(() => resolve(admins[index]), 300);
       });
     }
     return undefined;
