@@ -4,27 +4,31 @@ export interface Election {
   id: string;
   title: string;
   description: string;
-  startDate: string;
-  endDate: string;
-  isActive: boolean;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+  created_at: string;
   candidates: Candidate[];
 }
 
 export interface Candidate {
   id: string;
+  election_id: string;
   name: string;
   party?: string;
   biography?: string;
-  photoUrl?: string;
-  voteCount?: number;
-  description?: string;
+  photo_url?: string;
+  vote_count: number;
+  created_at: string;
 }
 
 export interface Voter {
   id: string;
-  hasVoted: boolean;
-  oneTimeCode?: string;
-  shared?: boolean; // Track if code has been shared
+  election_id: string;
+  one_time_code: string;
+  has_voted: boolean;
+  shared: boolean;
+  created_at: string;
 }
 
 export interface AdminUser {
@@ -45,9 +49,9 @@ export interface AdminUser {
 
 export interface LogEntry {
   id: string;
-  timestamp: string;
-  adminId: string;
-  adminName: string;
+  admin_id: string;
+  admin_name: string;
   action: string;
   details: string;
+  timestamp: string;
 }

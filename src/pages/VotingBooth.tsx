@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,8 @@ import { Separator } from '@/components/ui/separator';
 import Layout from '@/components/Layout';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/context/AuthContext';
-import { api, Election, Candidate } from '@/services/api';
+import { supabase } from '@/integrations/supabase/client';
+import { Election, Candidate } from '@/services/types';
 
 const VotingBooth = () => {
   const [election, setElection] = useState<Election | null>(null);
@@ -25,7 +25,7 @@ const VotingBooth = () => {
   
   useEffect(() => {
     // Redirect if not authenticated
-    if (!isAuthenticated || user?.role !== 'voter') {
+    if (!isAuthenticated || !user) {
       navigate('/voter-login');
       return;
     }
@@ -46,30 +46,41 @@ const VotingBooth = () => {
       
       try {
         setIsLoading(true);
-        const electionData = await api.getElection(electionId);
         
-        if (electionData) {
-          // Check if election is active
-          if (!electionData.isActive || new Date(electionData.endDate) < new Date()) {
-            toast({
-              title: "Election Closed",
-              description: "This election is no longer active",
-              variant: "destructive",
-            });
-            navigate('/voter-login');
-            return;
-          }
-          
-          setElection(electionData);
-        } else {
+        // Fetch the election with its candidates
+        const { data: electionData, error } = await supabase
+          .from('elections')
+          .select(`
+            *,
+            candidates (*)
+          `)
+          .eq('id', electionId)
+          .single();
+        
+        if (error || !electionData) {
           toast({
             title: "Error",
-            description: "Election not found",
+            description: "Failed to load election details",
             variant: "destructive",
           });
           navigate('/voter-login');
+          return;
         }
+        
+        // Check if election is active
+        if (!electionData.is_active || new Date(electionData.end_date) < new Date()) {
+          toast({
+            title: "Election Closed",
+            description: "This election is no longer active",
+            variant: "destructive",
+          });
+          navigate('/voter-login');
+          return;
+        }
+        
+        setElection(electionData);
       } catch (error) {
+        console.error("Error fetching election:", error);
         toast({
           title: "Error",
           description: "Failed to load election details",
@@ -89,22 +100,47 @@ const VotingBooth = () => {
     setIsSubmitting(true);
     
     try {
-      const success = await api.castVote(election.id, selectedCandidate, user.id);
+      // Get the voter ID from user metadata
+      const voterId = user.id;
       
-      if (success) {
-        setVoteCast(true);
-        toast({
-          title: "Vote Cast Successfully",
-          description: "Thank you for participating in this election",
-        });
-      } else {
+      // Call the RPC function to increment the vote count
+      const { error: voteError } = await supabase.rpc('increment_vote', {
+        candidate_id_param: selectedCandidate
+      });
+      
+      if (voteError) {
+        console.error("Error casting vote:", voteError);
         toast({
           title: "Error",
           description: "Failed to cast your vote",
           variant: "destructive",
         });
+        return;
       }
+      
+      // Mark the voter as having voted
+      const { error: voterError } = await supabase
+        .from('voters')
+        .update({ has_voted: true })
+        .eq('id', voterId);
+      
+      if (voterError) {
+        console.error("Error updating voter status:", voterError);
+        toast({
+          title: "Error",
+          description: "Failed to update your voting status",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setVoteCast(true);
+      toast({
+        title: "Vote Cast Successfully",
+        description: "Thank you for participating in this election",
+      });
     } catch (error) {
+      console.error("Error casting vote:", error);
       toast({
         title: "Error",
         description: "An error occurred while processing your vote",
@@ -209,7 +245,7 @@ const VotingBooth = () => {
             <CardDescription>
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                 <span>{election.description}</span>
-                <span className="text-sm">Closes: {formatDate(election.endDate)}</span>
+                <span className="text-sm">Closes: {formatDate(election.end_date)}</span>
               </div>
             </CardDescription>
           </CardHeader>

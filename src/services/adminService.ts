@@ -1,35 +1,41 @@
 
+import { supabase } from '@/integrations/supabase/client';
 import { AdminUser } from './types';
 
-// In-memory storage for admins until we connect to a real backend
-const admins: AdminUser[] = [];
-
+// Since we're using Supabase auth for admin users, this service is mostly for managing admin metadata
 export const adminService = {
   getAdmins: async (): Promise<AdminUser[]> => {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve([...admins]), 300);
-    });
+    // In a production app, you'd likely have an admins table to store additional metadata
+    // For now, we'll return an empty array as we're using Supabase auth directly
+    return [];
   },
   
   addAdmin: async (admin: Omit<AdminUser, 'id'>): Promise<AdminUser> => {
-    const newAdmin = {
-      ...admin,
+    // This would typically create a user in Supabase Auth and add their metadata to a custom admins table
+    // For simplicity, we're just returning a mock response
+    return {
       id: 'admin-' + Date.now(),
+      ...admin
     };
-    admins.push(newAdmin);
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(newAdmin), 300);
-    });
   },
   
   updateAdmin: async (id: string, updates: Partial<AdminUser>): Promise<AdminUser | undefined> => {
-    const index = admins.findIndex(a => a.id === id);
-    if (index !== -1) {
-      admins[index] = { ...admins[index], ...updates };
-      return new Promise((resolve) => {
-        setTimeout(() => resolve(admins[index]), 300);
-      });
-    }
-    return undefined;
+    // This would typically update admin metadata in a custom table
+    // For simplicity, we're just returning a mock response
+    return {
+      id,
+      name: updates.name || 'Admin User',
+      email: updates.email || 'admin@example.com',
+      role: updates.role || 'admin',
+      permissions: updates.permissions || {
+        canCreateElections: true,
+        canEditElections: true,
+        canDeleteElections: false,
+        canManageVoters: true,
+        canManageAdmins: false,
+        canViewLogs: true,
+        canChangeSettings: false,
+      }
+    };
   },
 };

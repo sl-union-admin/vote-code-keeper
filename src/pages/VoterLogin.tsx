@@ -39,12 +39,12 @@ const VoterLogin = () => {
           description: "You have been logged in successfully",
         });
         
-        // User object will have electionId that the voter needs to vote on
-        const userData = JSON.parse(localStorage.getItem('user') || '{}');
-        console.log("User data after login:", userData);
+        // The election ID will be stored in user metadata in our auth context
+        // This way we don't need to rely on localStorage anymore
+        const { user } = useAuth();
         
-        if (userData.electionId) {
-          navigate(`/elections/${userData.electionId}`);
+        if (user?.electionId) {
+          navigate(`/elections/${user.electionId}`);
         } else {
           navigate('/elections');
         }

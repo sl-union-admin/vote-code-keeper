@@ -17,7 +17,7 @@ export const api = {
   ...logService,
   ...voteService,
   
-  // Add missing functions
+  // Add specific named exports
   toggleSharedStatus: voterService.toggleSharedStatus,
   validateVoterCode: voterService.validateVoterCode,
 };

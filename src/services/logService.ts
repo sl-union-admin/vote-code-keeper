@@ -1,26 +1,41 @@
 
+import { supabase } from '@/integrations/supabase/client';
 import { LogEntry } from './types';
-import { storage } from './auth';
 
 export const logService = {
   getLogs: async (): Promise<LogEntry[]> => {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(storage.getLogs()), 300);
-    });
+    const { data, error } = await supabase
+      .from('logs')
+      .select('*')
+      .order('timestamp', { ascending: false });
+      
+    if (error) {
+      console.error('Error fetching logs:', error);
+      return [];
+    }
+    
+    return data || [];
   },
   
   addLog: async (adminId: string, adminName: string, action: string, details: string): Promise<LogEntry> => {
-    const newLog: LogEntry = {
-      id: 'log-' + Date.now(),
-      timestamp: new Date().toISOString(),
-      adminId,
-      adminName,
+    const newLog = {
+      admin_id: adminId,
+      admin_name: adminName,
       action,
       details
     };
-    storage.addLog(newLog);
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(newLog), 300);
-    });
+    
+    const { data, error } = await supabase
+      .from('logs')
+      .insert([newLog])
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error adding log:', error);
+      throw error;
+    }
+    
+    return data;
   },
 };
