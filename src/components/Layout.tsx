@@ -27,7 +27,7 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
               <span>Home</span>
             </Link>
             <Link 
-              to="/admin" 
+              to="/admin/login" 
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               Admin Login

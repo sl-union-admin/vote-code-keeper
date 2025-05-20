@@ -20,7 +20,8 @@ import {
   Vote, 
   Users, 
   LogOut,
-  FileText
+  FileText,
+  Home
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from '@/components/ui/use-toast';
@@ -108,6 +109,15 @@ const AppSidebar = () => {
                   <Link to="/admin/settings">
                     <Settings className="h-4 w-4" />
                     <span>Settings</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to="/">
+                    <Home className="h-4 w-4" />
+                    <span>Home</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

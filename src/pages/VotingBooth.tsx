@@ -21,7 +21,7 @@ const VotingBooth = () => {
   const { electionId } = useParams<{ electionId: string }>();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   
   useEffect(() => {
     // Redirect if not authenticated
@@ -127,6 +127,12 @@ const VotingBooth = () => {
     
     handleVote();
   };
+
+  const handleExit = () => {
+    // Log out the voter after they've cast their vote
+    logout();
+    navigate('/');
+  };
   
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { 
@@ -184,11 +190,7 @@ const VotingBooth = () => {
               </div>
             </CardContent>
             <CardFooter className="flex justify-center">
-              <Button onClick={() => {
-                // Log out the voter after they've cast their vote
-                localStorage.removeItem('user');
-                navigate('/');
-              }}>
+              <Button onClick={handleExit}>
                 Exit
               </Button>
             </CardFooter>
@@ -240,11 +242,7 @@ const VotingBooth = () => {
               Your vote is anonymous and secure
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => {
-                // Log out the voter 
-                localStorage.removeItem('user');
-                navigate('/');
-              }}>
+              <Button variant="outline" onClick={handleExit}>
                 Cancel
               </Button>
               <Button 
