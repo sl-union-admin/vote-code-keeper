@@ -1,54 +1,4 @@
-
-import { AdminUser, LogEntry } from './types';
-
-// Helper function to get environment variables with fallbacks
-const getEnvVariable = (name: string, fallback: string): string => {
-  return process.env[name] || fallback;
-};
-
-// Admin authentication
-export const authenticateAdmin = async (email: string, password: string): Promise<AdminUser | null> => {
-  const adminEmail = getEnvVariable('ADMIN_EMAIL', 'admin@example.com');
-  const adminPassword = getEnvVariable('ADMIN_PASSWORD', 'SecurePassword123!');
-  const superAdminEmail = getEnvVariable('SUPER_ADMIN_EMAIL', 'superadmin@example.com');
-  const superAdminPassword = getEnvVariable('SUPER_ADMIN_PASSWORD', 'SuperSecurePassword456!');
-  
-  if (email === adminEmail && password === adminPassword) {
-    return {
-      id: 'admin-1',
-      name: 'Admin User',
-      email: adminEmail,
-      role: 'admin',
-      permissions: {
-        canCreateElections: true,
-        canEditElections: true,
-        canDeleteElections: false,
-        canManageVoters: true,
-        canManageAdmins: false,
-        canViewLogs: true,
-        canChangeSettings: false,
-      }
-    };
-  } else if (email === superAdminEmail && password === superAdminPassword) {
-    return {
-      id: 'superadmin-1',
-      name: 'Super Admin',
-      email: superAdminEmail,
-      role: 'super_admin',
-      permissions: {
-        canCreateElections: true,
-        canEditElections: true,
-        canDeleteElections: true,
-        canManageVoters: true,
-        canManageAdmins: true,
-        canViewLogs: true,
-        canChangeSettings: true,
-      }
-    };
-  }
-  
-  return null;
-};
+import { AdminUser, LogEntry, Election, Voter } from './types';
 
 // Create a storage system
 class Storage {
@@ -185,26 +135,81 @@ class Storage {
 // Create a global instance of the storage
 export const storage = new Storage();
 
-// Initialize with some example data
-const initializeData = () => {
-  // Example election
-  const election = {
-    id: 'election-1',
-    title: 'School Board Election',
-    description: 'Vote for your preferred school board representative',
+// Helper function to get environment variables with fallbacks
+const getEnvVariable = (name: string, fallback: string): string => {
+  if (typeof window !== 'undefined') {
+    // Browser environment doesn't have process.env
+    // Use window.__env__ or fallback
+    const envObj = (window as any).__env__ || {};
+    return envObj[name] || fallback;
+  }
+  return fallback;
+};
+
+// Admin authentication
+export const authenticateAdmin = async (email: string, password: string): Promise<AdminUser | null> => {
+  const adminEmail = getEnvVariable('ADMIN_EMAIL', 'admin@example.com');
+  const adminPassword = getEnvVariable('ADMIN_PASSWORD', 'SecurePassword123!');
+  const superAdminEmail = getEnvVariable('SUPER_ADMIN_EMAIL', 'superadmin@example.com');
+  const superAdminPassword = getEnvVariable('SUPER_ADMIN_PASSWORD', 'SuperSecurePassword456!');
+  
+  if (email === adminEmail && password === adminPassword) {
+    return {
+      id: 'admin-1',
+      name: 'Admin User',
+      email: adminEmail,
+      role: 'admin',
+      permissions: {
+        canCreateElections: true,
+        canEditElections: true,
+        canDeleteElections: false,
+        canManageVoters: true,
+        canManageAdmins: false,
+        canViewLogs: true,
+        canChangeSettings: false,
+      }
+    };
+  } else if (email === superAdminEmail && password === superAdminPassword) {
+    return {
+      id: 'superadmin-1',
+      name: 'Super Admin',
+      email: superAdminEmail,
+      role: 'super_admin',
+      permissions: {
+        canCreateElections: true,
+        canEditElections: true,
+        canDeleteElections: true,
+        canManageVoters: true,
+        canManageAdmins: true,
+        canViewLogs: true,
+        canChangeSettings: true,
+      }
+    };
+  }
+  
+  return null;
+};
+
+// Function to create some initial test data
+const createTestData = () => {
+  // Create a test election
+  const testElection = {
+    id: 'election-test',
+    title: 'Test Election',
+    description: 'This is a test election for demonstration purposes',
     startDate: new Date().toISOString(),
     endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week from now
     isActive: true,
     candidates: [
       {
-        id: 'candidate-1',
+        id: 'candidate-test-1',
         name: 'Jane Smith',
         party: 'Progress Party',
         biography: 'Jane has been a teacher for 15 years and wants to improve education standards.',
         voteCount: 0
       },
       {
-        id: 'candidate-2',
+        id: 'candidate-test-2',
         name: 'John Doe',
         party: 'Reform Party',
         biography: 'John has served on the school board for 4 years and aims to continue his work.',
@@ -213,30 +218,28 @@ const initializeData = () => {
     ]
   };
   
-  storage.addElection(election);
+  storage.addElection(testElection);
   
-  // Add some voter codes for this election
-  for (let i = 1; i <= 5; i++) {
-    const voter = {
-      id: `voter-${i}`,
-      hasVoted: false,
-      oneTimeCode: Math.floor(100000 + Math.random() * 900000).toString(),
-      shared: false
-    };
-    
-    storage.addVoter(voter, election.id);
-  }
+  // Add a test voter code for this election
+  const testVoter = {
+    id: 'voter-test',
+    hasVoted: false,
+    oneTimeCode: '123456',
+    shared: false
+  };
   
-  // Add an initial log entry
+  storage.addVoter(testVoter, testElection.id);
+  
+  // Add a log entry for test data creation
   storage.addLog({
-    id: 'log-1',
+    id: 'log-test',
     timestamp: new Date().toISOString(),
     adminId: 'system',
     adminName: 'System',
     action: 'INITIALIZE',
-    details: 'System initialized with example data'
+    details: 'System initialized with test data'
   });
 };
 
-// Run initialization
-initializeData();
+// Create test data on initialization
+createTestData();

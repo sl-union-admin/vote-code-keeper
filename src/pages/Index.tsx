@@ -2,11 +2,21 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Layout from '@/components/Layout';
 import { Vote } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/services/api';
 
 const Index = () => {
+  const { data: elections, isLoading } = useQuery({
+    queryKey: ['elections'],
+    queryFn: () => api.getElections()
+  });
+
+  const activeElections = elections?.filter(election => election.isActive) || [];
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-10">
@@ -42,6 +52,42 @@ const Index = () => {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* Active Elections Section */}
+        <section className="py-12">
+          <h2 className="text-3xl font-bold mb-8 text-center">Active Elections</h2>
+          {isLoading ? (
+            <div className="text-center">Loading active elections...</div>
+          ) : activeElections.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {activeElections.map((election) => (
+                <Card key={election.id} className="transition-all hover:shadow-md">
+                  <CardHeader>
+                    <CardTitle>{election.title}</CardTitle>
+                    <CardDescription>
+                      {new Date(election.endDate).toLocaleDateString()} deadline
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="line-clamp-3">{election.description}</p>
+                  </CardContent>
+                  <CardFooter>
+                    <Button asChild className="w-full">
+                      <Link to="/voter-login">
+                        <Vote className="mr-2 h-4 w-4" />
+                        Vote Now
+                      </Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 border rounded-lg bg-muted/20">
+              <p className="text-muted-foreground">No active elections at the moment.</p>
+            </div>
+          )}
         </section>
 
         {/* Features Section */}

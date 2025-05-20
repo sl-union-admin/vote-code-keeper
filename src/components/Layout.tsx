@@ -3,6 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import Logo from './Logo';
+import { Home } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,10 +15,17 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
     <div className="min-h-screen flex flex-col">
       <header className="border-b bg-background">
         <div className="container mx-auto py-4 px-4 flex justify-between items-center">
-          <Link to="/">
+          <Link to="/" className="flex items-center space-x-2">
             <Logo />
           </Link>
           <div className="flex gap-4">
+            <Link 
+              to="/" 
+              className="flex items-center gap-1 hover:text-primary transition-colors"
+            >
+              <Home className="h-4 w-4" />
+              <span>Home</span>
+            </Link>
             <Link 
               to="/admin" 
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"

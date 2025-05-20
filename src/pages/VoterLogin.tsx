@@ -30,6 +30,7 @@ const VoterLogin = () => {
     setIsLoading(true);
     
     try {
+      console.log("Attempting login with code:", code);
       const success = await login(code);
       
       if (success) {
@@ -40,6 +41,8 @@ const VoterLogin = () => {
         
         // User object will have electionId that the voter needs to vote on
         const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        console.log("User data after login:", userData);
+        
         if (userData.electionId) {
           navigate(`/elections/${userData.electionId}`);
         } else {
@@ -53,6 +56,7 @@ const VoterLogin = () => {
         });
       }
     } catch (error) {
+      console.error("Login error:", error);
       toast({
         title: "Error",
         description: "An error occurred while logging in",
