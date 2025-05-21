@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logService } from '@/services/logService';
 
 export const useAdminAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -22,14 +23,12 @@ export const useAdminAuth = () => {
       
       // Log admin login
       try {
-        await supabase
-          .from('logs')
-          .insert({
-            admin_id: data.user.id,
-            admin_name: data.user.email || 'Admin',
-            action: 'LOGIN',
-            details: `Admin user ${data.user.email} logged in`
-          });
+        await logService.addLog(
+          data.user.id,
+          data.user.email || 'Admin',
+          'LOGIN',
+          `Admin user ${data.user.email} logged in`
+        );
       } catch (error) {
         console.error("Error logging admin login:", error);
         // Don't fail the login just because logging failed
@@ -47,14 +46,12 @@ export const useAdminAuth = () => {
   const logoutAdmin = async (userId: string, userName: string) => {
     // Log admin logout
     try {
-      await supabase
-        .from('logs')
-        .insert({
-          admin_id: userId,
-          admin_name: userName || 'Admin',
-          action: 'LOGOUT',
-          details: `Admin user ${userName || 'Admin'} logged out`
-        });
+      await logService.addLog(
+        userId,
+        userName || 'Admin',
+        'LOGOUT',
+        `Admin user ${userName || 'Admin'} logged out`
+      );
     } catch (error) {
       console.error('Error logging logout:', error);
     }

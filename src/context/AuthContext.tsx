@@ -2,9 +2,10 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
-import { AuthUser, UserRole, AdminPermissions } from '@/services/types';
+import { AuthUser, UserRole } from '@/services/types';
 import { useVoterAuth } from '@/hooks/useVoterAuth';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { logService } from '@/services/logService';
 
 // Context type
 interface AuthContextType {
@@ -37,13 +38,14 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
         
         if (newSession) {
           // Get user metadata and role
-          const userRole = newSession.user?.user_metadata?.role || 'voter';
+          const userMeta = newSession.user?.user_metadata;
+          const userRole = userMeta?.role || 'voter';
           
           let userData: AuthUser = {
             id: newSession.user.id,
             role: userRole as UserRole,
             email: newSession.user.email || undefined,
-            name: newSession.user?.user_metadata?.name,
+            name: userMeta?.name as string | undefined,
           };
           
           // For admin users, add permissions
@@ -60,8 +62,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
           }
           
           // For voter users, check if they have an election ID
-          if (userRole === 'voter' && newSession.user?.user_metadata?.electionId) {
-            userData.electionId = newSession.user.user_metadata.electionId as string;
+          if (userRole === 'voter' && userMeta?.electionId) {
+            userData.electionId = userMeta.electionId as string;
           }
           
           setUser(userData);
@@ -77,13 +79,14 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
       
       if (currentSession) {
         // Get user metadata and role
-        const userRole = currentSession.user?.user_metadata?.role || 'voter';
+        const userMeta = currentSession.user?.user_metadata;
+        const userRole = userMeta?.role || 'voter';
         
         let userData: AuthUser = {
           id: currentSession.user.id,
           role: userRole as UserRole,
           email: currentSession.user.email || undefined,
-          name: currentSession.user?.user_metadata?.name as string | undefined,
+          name: userMeta?.name as string | undefined,
         };
         
         // For admin users, add permissions
@@ -100,8 +103,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
         }
         
         // For voter users, check if they have an election ID
-        if (userRole === 'voter' && currentSession.user?.user_metadata?.electionId) {
-          userData.electionId = currentSession.user.user_metadata.electionId as string;
+        if (userRole === 'voter' && userMeta?.electionId) {
+          userData.electionId = userMeta.electionId as string;
         }
         
         setUser(userData);

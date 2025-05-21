@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/context/AuthContext';
-import { Candidate } from '@/services/types';
+import { voteService } from '@/services/voteService';
 
 export const useVoting = () => {
   const [selectedCandidate, setSelectedCandidate] = useState<string>('');
@@ -27,32 +27,17 @@ export const useVoting = () => {
       // Get the voter ID from user metadata
       const voterId = user.id;
       
-      // Call the RPC function to increment the vote count
-      const { error: voteError } = await supabase.rpc('increment_vote', {
-        candidate_id_param: selectedCandidate
-      });
+      // Call the vote service to cast the vote
+      const success = await voteService.castVote(
+        user.electionId || '',
+        selectedCandidate,
+        voterId
+      );
       
-      if (voteError) {
-        console.error("Error casting vote:", voteError);
+      if (!success) {
         toast({
           title: "Error",
           description: "Failed to cast your vote",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Mark the voter as having voted
-      const { error: voterError } = await supabase
-        .from('voters')
-        .update({ has_voted: true })
-        .eq('id', voterId);
-      
-      if (voterError) {
-        console.error("Error updating voter status:", voterError);
-        toast({
-          title: "Error",
-          description: "Failed to update your voting status",
           variant: "destructive",
         });
         return;

@@ -5,6 +5,7 @@ import {
   Voter,
   LogEntry
 } from './types';
+import { convertToCamelCase } from '@/utils/typeUtils';
 
 // Utility functions to map between snake_case (DB) and camelCase (frontend)
 export const mapElection = (dbElection: any): Election => {
