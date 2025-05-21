@@ -1,7 +1,7 @@
 
 import { AdminUser } from './types';
-import { supabase } from '@/integrations/supabase/client';
 
+// Since there's no admins table in the database, we'll implement this as a mock service
 export const adminService = {
   // Mock implementation for getAdmins
   getAdmins: async (): Promise<AdminUser[]> => {

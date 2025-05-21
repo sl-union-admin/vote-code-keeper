@@ -5,7 +5,6 @@ import { Session } from '@supabase/supabase-js';
 import { AuthUser, UserRole } from '@/services/types';
 import { useVoterAuth } from '@/hooks/useVoterAuth';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { logService } from '@/services/logService';
 
 // Context type
 interface AuthContextType {
@@ -68,7 +67,34 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
           
           setUser(userData);
         } else {
-          setUser(null);
+          // Check for stored admin login
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            try {
+              const adminUser = JSON.parse(storedUser);
+              const userData: AuthUser = {
+                id: adminUser.id,
+                role: adminUser.role as UserRole,
+                email: adminUser.email,
+                name: adminUser.name,
+                permissions: {
+                  canCreateElections: true,
+                  canEditElections: true,
+                  canDeleteElections: adminUser.role === 'super_admin',
+                  canManageVoters: true,
+                  canManageAdmins: adminUser.role === 'super_admin',
+                  canViewLogs: true,
+                  canChangeSettings: adminUser.role === 'super_admin'
+                }
+              };
+              setUser(userData);
+            } catch (error) {
+              console.error("Error parsing stored admin user:", error);
+              setUser(null);
+            }
+          } else {
+            setUser(null);
+          }
         }
       }
     );
@@ -108,6 +134,35 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
         }
         
         setUser(userData);
+      } else {
+        // Check for stored admin login
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          try {
+            const adminUser = JSON.parse(storedUser);
+            const userData: AuthUser = {
+              id: adminUser.id,
+              role: adminUser.role as UserRole,
+              email: adminUser.email,
+              name: adminUser.name,
+              permissions: {
+                canCreateElections: true,
+                canEditElections: true,
+                canDeleteElections: adminUser.role === 'super_admin',
+                canManageVoters: true,
+                canManageAdmins: adminUser.role === 'super_admin',
+                canViewLogs: true,
+                canChangeSettings: adminUser.role === 'super_admin'
+              }
+            };
+            setUser(userData);
+          } catch (error) {
+            console.error("Error parsing stored admin user:", error);
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
       }
       
       setIsLoading(false);
