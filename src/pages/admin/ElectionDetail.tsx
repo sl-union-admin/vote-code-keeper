@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -85,18 +86,17 @@ const ElectionDetail = () => {
       const newCandidate: Candidate = {
         id: 'candidate-' + Date.now(),
         name: candidate.name || '', // Ensure name is provided (required by Candidate interface)
+        election_id: election.id,
         party: candidate.party,
         biography: candidate.biography,
-        photoUrl: candidate.photoUrl,
-        voteCount: candidate.voteCount || 0,
-        description: candidate.description
+        photo_url: candidate.photo_url,
+        vote_count: candidate.vote_count || 0,
+        created_at: new Date().toISOString()
       };
       
       const updatedCandidates = [...election.candidates, newCandidate];
       
-      return api.updateElection(election.id, { 
-        candidates: updatedCandidates 
-      });
+      return api.updateElection(election.id, { candidates: updatedCandidates });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['election', electionId] });
@@ -126,9 +126,7 @@ const ElectionDetail = () => {
         candidate.id === candidateId ? { ...candidate, ...updates } : candidate
       );
       
-      return api.updateElection(election.id, { 
-        candidates: updatedCandidates 
-      });
+      return api.updateElection(election.id, { candidates: updatedCandidates });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['election', electionId] });
@@ -159,9 +157,7 @@ const ElectionDetail = () => {
         candidate.id !== candidateId
       );
       
-      return api.updateElection(election.id, { 
-        candidates: updatedCandidates 
-      });
+      return api.updateElection(election.id, { candidates: updatedCandidates });
     },
     onSuccess: (_, candidateId) => {
       queryClient.invalidateQueries({ queryKey: ['election', electionId] });
@@ -188,7 +184,7 @@ const ElectionDetail = () => {
     updateElectionMutation.mutate({ 
       id: election.id, 
       updates: { 
-        isActive: true 
+        is_active: true 
       } 
     });
   };
@@ -271,10 +267,10 @@ const ElectionDetail = () => {
 
   // Prepare data for the results pie chart
   const chartData = election.candidates
-    .filter(candidate => (candidate.voteCount || 0) > 0)
+    .filter(candidate => (candidate.vote_count || 0) > 0)
     .map((candidate, index) => ({
       name: candidate.name,
-      value: candidate.voteCount || 0,
+      value: candidate.vote_count || 0,
       color: COLORS[index % COLORS.length]
     }));
 
@@ -287,11 +283,11 @@ const ElectionDetail = () => {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{election.title}</h1>
             <div className="flex items-center mt-2 space-x-2">
-              <Badge variant={election.isActive ? "default" : "outline"}>
-                {election.isActive ? "Active" : "Inactive"}
+              <Badge variant={election.is_active ? "default" : "outline"}>
+                {election.is_active ? "Active" : "Inactive"}
               </Badge>
               <span className="text-sm text-muted-foreground">
-                {formatDate(election.startDate)} - {formatDate(election.endDate)}
+                {formatDate(election.start_date)} - {formatDate(election.end_date)}
               </span>
             </div>
           </div>
@@ -300,7 +296,7 @@ const ElectionDetail = () => {
               <Pencil className="mr-2 h-4 w-4" />
               Edit
             </Button>
-            {!election.isActive && (
+            {!election.is_active && (
               <Button onClick={handleActivate}>
                 Reactivate
               </Button>
@@ -361,7 +357,7 @@ const ElectionDetail = () => {
                           <TableRow key={candidate.id}>
                             <TableCell className="font-medium">{candidate.name}</TableCell>
                             <TableCell>{candidate.party || "Independent"}</TableCell>
-                            <TableCell>{candidate.voteCount || 0}</TableCell>
+                            <TableCell>{candidate.vote_count || 0}</TableCell>
                             <TableCell>
                               <div className="flex space-x-2">
                                 <Button 
@@ -442,15 +438,15 @@ const ElectionDetail = () => {
                     </TableHeader>
                     <TableBody>
                       {election.candidates
-                        .sort((a, b) => (b.voteCount || 0) - (a.voteCount || 0))
+                        .sort((a, b) => (b.vote_count || 0) - (a.vote_count || 0))
                         .map((candidate) => (
                         <TableRow key={candidate.id}>
                           <TableCell className="font-medium">{candidate.name}</TableCell>
                           <TableCell>{candidate.party || "Independent"}</TableCell>
-                          <TableCell className="text-right">{candidate.voteCount || 0}</TableCell>
+                          <TableCell className="text-right">{candidate.vote_count || 0}</TableCell>
                           <TableCell className="text-right">
                             {totalVotes > 0 ? 
-                              `${(((candidate.voteCount || 0) / totalVotes) * 100).toFixed(1)}%` : 
+                              `${(((candidate.vote_count || 0) / totalVotes) * 100).toFixed(1)}%` : 
                               '0%'}
                           </TableCell>
                         </TableRow>

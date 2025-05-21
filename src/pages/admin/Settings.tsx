@@ -29,7 +29,7 @@ interface PasswordResetForm {
 }
 
 const Settings = () => {
-  const { data: admins, isLoading } = useQuery({
+  const { data: admins = [], isLoading } = useQuery({
     queryKey: ['admins'],
     queryFn: api.getAdmins,
   });
@@ -202,7 +202,7 @@ const Settings = () => {
                     <p>Loading administrators...</p>
                   ) : (
                     <div className="space-y-6">
-                      {admins?.map((admin) => (
+                      {admins.map((admin) => (
                         <div key={admin.id} className="rounded-lg border p-4 space-y-4">
                           <div className="flex items-center justify-between">
                             <div>

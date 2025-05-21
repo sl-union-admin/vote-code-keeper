@@ -23,10 +23,9 @@ export const useVoting = () => {
     setIsSubmitting(true);
     
     try {
-      // Get the voter ID from user metadata
+      // Get the voter ID and election ID from user
       const voterId = user.id;
-      const userMeta = user.user_metadata || {};
-      const electionId = userMeta.electionId || '';
+      const electionId = user.electionId || '';
       
       // Call the vote service to cast the vote
       const success = await voteService.castVote(

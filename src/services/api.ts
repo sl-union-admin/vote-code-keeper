@@ -29,7 +29,7 @@ export const api = {
   validateVoterCode: voterService.validateVoterCode,
   
   // Admin service
-  // ... admin service exports
+  getAdmins: adminService.getAdmins,
   
   // Log service
   addLog: logService.addLog,

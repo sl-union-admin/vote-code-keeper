@@ -4,13 +4,13 @@ import { LogEntry } from './types';
 import { mapLogEntry } from './mappingUtils';
 
 export const logService = {
-  addLog: async (adminId: string, adminName: string, action: string, details: string): Promise<boolean> => {
+  addLog: async (admin_id: string, admin_name: string, action: string, details: string): Promise<boolean> => {
     try {
       const { error } = await supabase
         .from('logs')
         .insert({
-          admin_id: adminId,
-          admin_name: adminName,
+          admin_id,
+          admin_name,
           action,
           details
         });
