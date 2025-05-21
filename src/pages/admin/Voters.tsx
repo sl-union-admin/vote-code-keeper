@@ -200,7 +200,7 @@ const Voters = () => {
     
     let csv = 'Voter ID,One-Time Code,Has Voted,Shared\n';
     voters.forEach(voter => {
-      csv += `${voter.id},${voter.oneTimeCode || 'None'},${voter.hasVoted ? 'Yes' : 'No'},${voter.shared ? 'Yes' : 'No'}\n`;
+      csv += `${voter.id},${voter.one_time_code || 'None'},${voter.has_voted ? 'Yes' : 'No'},${voter.shared ? 'Yes' : 'No'}\n`;
     });
     
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -288,11 +288,11 @@ const Voters = () => {
                         <TableCell>{voter.id.substring(0, 10)}...</TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
-                            <span className="font-mono">{voter.oneTimeCode || 'None'}</span>
+                            <span className="font-mono">{voter.one_time_code || 'None'}</span>
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              onClick={() => copyToClipboard(voter.oneTimeCode || '')}
+                              onClick={() => copyToClipboard(voter.one_time_code || '')}
                               title="Copy code"
                             >
                               <Copy className="h-4 w-4" />
@@ -300,8 +300,8 @@ const Voters = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={voter.hasVoted ? 'outline' : 'default'}>
-                            {voter.hasVoted ? 'Voted' : 'Not Voted'}
+                          <Badge variant={voter.has_voted ? 'outline' : 'default'}>
+                            {voter.has_voted ? 'Voted' : 'Not Voted'}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -316,7 +316,7 @@ const Voters = () => {
                             variant="ghost" 
                             size="sm" 
                             onClick={() => handleRegenerateCode(voter.id)}
-                            disabled={voter.hasVoted}
+                            disabled={voter.has_voted}
                             title="Regenerate code"
                           >
                             <RefreshCw className="h-4 w-4" />

@@ -40,13 +40,13 @@ const Elections = () => {
               <Card key={election.id} className="overflow-hidden">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <Badge variant={election.isActive ? 'default' : 'outline'}>
-                      {election.isActive ? 'Active' : 'Inactive'}
+                    <Badge variant={election.is_active ? 'default' : 'outline'}>
+                      {election.is_active ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
                   <CardTitle className="line-clamp-1">{election.title}</CardTitle>
                   <CardDescription>
-                    {formatDate(election.startDate)} - {formatDate(election.endDate)}
+                    {formatDate(election.start_date)} - {formatDate(election.end_date)}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

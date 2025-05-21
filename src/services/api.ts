@@ -11,13 +11,30 @@ export * from './types';
 
 // Combine all services into a single API object
 export const api = {
-  ...electionService,
-  ...voterService,
-  ...adminService,
-  ...logService,
-  ...voteService,
+  // Election service
+  getElections: electionService.getElections,
+  getElection: electionService.getElection,
+  createElection: electionService.createElection,
+  updateElection: electionService.updateElection,
+  deleteElection: electionService.deleteElection,
   
-  // Add specific named exports
+  // Voter service
+  getVoters: voterService.getVoters,
+  getVotersByElection: voterService.getVotersByElection,
+  addVoter: voterService.addVoter,
+  deleteVoter: voterService.deleteVoter,
+  generateCodes: voterService.generateCodes,
+  regenerateCode: voterService.regenerateCode,
   toggleSharedStatus: voterService.toggleSharedStatus,
   validateVoterCode: voterService.validateVoterCode,
+  
+  // Admin service
+  // ... admin service exports
+  
+  // Log service
+  addLog: logService.addLog,
+  getLogs: logService.getLogs,
+  
+  // Vote service
+  castVote: voteService.castVote
 };

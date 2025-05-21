@@ -3,10 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const voteService = {
   castVote: async (electionId: string, candidateId: string, voterId: string): Promise<boolean> => {
-    // Start a transaction to update candidate vote count and mark voter as voted
-    // This has to be done in two steps since Supabase doesn't support true transactions via the client library
-    
-    // 1. Update the candidate's vote count
+    // Call the increment_vote function to update candidate vote count
     const { error: candidateError } = await supabase.rpc('increment_vote', {
       candidate_id_param: candidateId
     });
@@ -16,7 +13,7 @@ export const voteService = {
       return false;
     }
     
-    // 2. Mark the voter as having voted
+    // Mark the voter as having voted
     const { error: voterError } = await supabase
       .from('voters')
       .update({ has_voted: true })

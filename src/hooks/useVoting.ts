@@ -1,7 +1,6 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { voteService } from '@/services/voteService';
@@ -26,10 +25,12 @@ export const useVoting = () => {
     try {
       // Get the voter ID from user metadata
       const voterId = user.id;
+      const userMeta = user.user_metadata || {};
+      const electionId = userMeta.electionId || '';
       
       // Call the vote service to cast the vote
       const success = await voteService.castVote(
-        user.electionId || '',
+        electionId,
         selectedCandidate,
         voterId
       );

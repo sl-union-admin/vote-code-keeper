@@ -41,15 +41,15 @@ const Logs = () => {
                     <TableRow>
                       <TableCell colSpan={4} className="text-center">Loading logs...</TableCell>
                     </TableRow>
-                  ) : logs?.length === 0 ? (
+                  ) : logs && logs.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center">No logs found</TableCell>
                     </TableRow>
                   ) : (
-                    logs?.map((log) => (
+                    logs && logs.map((log) => (
                       <TableRow key={log.id}>
                         <TableCell className="font-mono">{formatDate(log.timestamp)}</TableCell>
-                        <TableCell>{log.adminName}</TableCell>
+                        <TableCell>{log.admin_name}</TableCell>
                         <TableCell>
                           <span className="inline-block rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
                             {log.action}

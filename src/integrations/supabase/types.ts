@@ -9,13 +9,148 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      candidates: {
+        Row: {
+          biography: string | null
+          created_at: string | null
+          election_id: string | null
+          id: string
+          name: string
+          party: string | null
+          photo_url: string | null
+          vote_count: number | null
+        }
+        Insert: {
+          biography?: string | null
+          created_at?: string | null
+          election_id?: string | null
+          id?: string
+          name: string
+          party?: string | null
+          photo_url?: string | null
+          vote_count?: number | null
+        }
+        Update: {
+          biography?: string | null
+          created_at?: string | null
+          election_id?: string | null
+          id?: string
+          name?: string
+          party?: string | null
+          photo_url?: string | null
+          vote_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidates_election_id_fkey"
+            columns: ["election_id"]
+            isOneToOne: false
+            referencedRelation: "elections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      elections: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          end_date: string
+          id: string
+          is_active: boolean | null
+          start_date: string
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          end_date: string
+          id?: string
+          is_active?: boolean | null
+          start_date: string
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string
+          id?: string
+          is_active?: boolean | null
+          start_date?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      logs: {
+        Row: {
+          action: string
+          admin_id: string
+          admin_name: string
+          created_at: string | null
+          details: string | null
+          id: string
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          admin_name: string
+          created_at?: string | null
+          details?: string | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          admin_name?: string
+          created_at?: string | null
+          details?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      voters: {
+        Row: {
+          created_at: string | null
+          election_id: string | null
+          has_voted: boolean | null
+          id: string
+          one_time_code: string
+          shared: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          election_id?: string | null
+          has_voted?: boolean | null
+          id?: string
+          one_time_code: string
+          shared?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          election_id?: string | null
+          has_voted?: boolean | null
+          id?: string
+          one_time_code?: string
+          shared?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voters_election_id_fkey"
+            columns: ["election_id"]
+            isOneToOne: false
+            referencedRelation: "elections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_vote: {
+        Args: { candidate_id_param: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

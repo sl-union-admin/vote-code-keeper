@@ -1,5 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { LogEntry } from './types';
+import { mapLogEntry } from './mappingUtils';
 
 export const logService = {
   addLog: async (adminId: string, adminName: string, action: string, details: string): Promise<boolean> => {
@@ -22,6 +24,25 @@ export const logService = {
     } catch (error) {
       console.error('Error adding log:', error);
       return false;
+    }
+  },
+  
+  getLogs: async (): Promise<LogEntry[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('logs')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching logs:', error);
+        return [];
+      }
+      
+      return data.map(mapLogEntry) || [];
+    } catch (error) {
+      console.error('Error fetching logs:', error);
+      return [];
     }
   }
 };

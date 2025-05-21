@@ -27,13 +27,10 @@ export const useVoterAuth = () => {
         return { success: false };
       }
       
-      // Map the voter data
-      const voter = mapVoter(data);
-      
       return {
         success: true,
-        voterId: voter.id,
-        electionId: voter.election_id
+        voterId: data.id,
+        electionId: data.election_id
       };
     } catch (error) {
       console.error("Voter authentication error:", error);
