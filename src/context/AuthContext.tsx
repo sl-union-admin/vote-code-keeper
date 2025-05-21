@@ -3,6 +3,8 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 import { AuthUser, UserRole, AdminPermissions } from '@/services/types';
+import { useVoterAuth } from '@/hooks/useVoterAuth';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 // Context type
 interface AuthContextType {
@@ -22,6 +24,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { authenticateVoter } = useVoterAuth();
+  const { loginAdmin, logoutAdmin } = useAdminAuth();
 
   // Initialize auth state
   useEffect(() => {
@@ -37,7 +41,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
           
           let userData: AuthUser = {
             id: newSession.user.id,
-            role: userRole,
+            role: userRole as UserRole,
             email: newSession.user.email || undefined,
             name: newSession.user?.user_metadata?.name,
           };
@@ -57,7 +61,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
           
           // For voter users, check if they have an election ID
           if (userRole === 'voter' && newSession.user?.user_metadata?.electionId) {
-            userData.electionId = newSession.user.user_metadata.electionId;
+            userData.electionId = newSession.user.user_metadata.electionId as string;
           }
           
           setUser(userData);
@@ -77,9 +81,9 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
         
         let userData: AuthUser = {
           id: currentSession.user.id,
-          role: userRole,
+          role: userRole as UserRole,
           email: currentSession.user.email || undefined,
-          name: currentSession.user?.user_metadata?.name,
+          name: currentSession.user?.user_metadata?.name as string | undefined,
         };
         
         // For admin users, add permissions
@@ -97,7 +101,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
         
         // For voter users, check if they have an election ID
         if (userRole === 'voter' && currentSession.user?.user_metadata?.electionId) {
-          userData.electionId = currentSession.user.user_metadata.electionId;
+          userData.electionId = currentSession.user.user_metadata.electionId as string;
         }
         
         setUser(userData);
@@ -120,15 +124,9 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     try {
       if (typeof codeOrCredentials === 'string') {
         // Voter login with one-time code
-        const { data, error } = await supabase
-          .from('voters')
-          .select('id, election_id, has_voted')
-          .eq('one_time_code', codeOrCredentials)
-          .eq('has_voted', false)
-          .single();
+        const result = await authenticateVoter(codeOrCredentials);
         
-        if (error || !data) {
-          console.error("Voter login error:", error);
+        if (!result.success) {
           return false;
         }
         
@@ -137,8 +135,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
           options: {
             data: {
               role: 'voter',
-              electionId: data.election_id,
-              voterId: data.id
+              electionId: result.electionId,
+              voterId: result.voterId
             }
           }
         });
@@ -152,41 +150,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
       } else {
         // Admin login with email/password
         const { email, password } = codeOrCredentials;
-        
-        // Email/password login for admins
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-        
-        if (error || !data.user) {
-          console.error("Admin login error:", error);
-          return false;
-        }
-        
-        // Log admin login
-        if (data.user) {
-          try {
-            const { error: logError } = await supabase
-              .from('logs')
-              .insert({
-                admin_id: data.user.id,
-                admin_name: data.user.email || 'Admin',
-                action: 'LOGIN',
-                details: `Admin user ${data.user.email} logged in`
-              });
-            
-            if (logError) {
-              console.error("Error logging admin login:", logError);
-              // Don't fail the login just because logging failed
-            }
-          } catch (error) {
-            console.error("Error logging admin login:", error);
-            // Don't fail the login just because logging failed
-          }
-        }
-        
-        return true;
+        return await loginAdmin(email, password);
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -197,28 +161,12 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
   };
 
   const logout = async () => {
-    if (user && (user.role === 'admin' || user.role === 'super_admin') && session) {
-      // Log admin logout
-      try {
-        const { error } = await supabase
-          .from('logs')
-          .insert({
-            admin_id: user.id,
-            admin_name: user.name || user.email || 'Admin',
-            action: 'LOGOUT',
-            details: `Admin user ${user.name || user.email || 'Admin'} logged out`
-          });
-        
-        if (error) {
-          console.error("Error logging admin logout:", error);
-        }
-      } catch (error) {
-        console.error('Error logging logout:', error);
-      }
+    if (user && (user.role === 'admin' || user.role === 'super_admin')) {
+      await logoutAdmin(user.id, user.name || user.email || 'Admin');
+    } else {
+      // Just sign out for voters
+      await supabase.auth.signOut();
     }
-    
-    // Sign out from Supabase
-    await supabase.auth.signOut();
   };
 
   const value = {

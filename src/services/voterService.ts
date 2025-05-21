@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Voter } from './types';
+import { mapVoter } from './mappingUtils';
 
 export const voterService = {
   getVoters: async (): Promise<Voter[]> => {
@@ -13,7 +14,7 @@ export const voterService = {
       return [];
     }
     
-    return data || [];
+    return data.map(mapVoter) || [];
   },
   
   getVotersByElection: async (electionId: string): Promise<Voter[]> => {
@@ -27,7 +28,7 @@ export const voterService = {
       return [];
     }
     
-    return data || [];
+    return data.map(mapVoter) || [];
   },
   
   addVoter: async (electionId: string): Promise<Voter> => {
@@ -49,7 +50,7 @@ export const voterService = {
       throw error;
     }
     
-    return data;
+    return mapVoter(data);
   },
   
   deleteVoter: async (id: string): Promise<boolean> => {

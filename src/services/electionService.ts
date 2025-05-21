@@ -1,19 +1,20 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Election } from './types';
+import { mapElection } from './mappingUtils';
 
 export const electionService = {
   getElections: async (): Promise<Election[]> => {
     const { data, error } = await supabase
       .from('elections')
-      .select('*');
+      .select('*, candidates(*)');
       
     if (error) {
       console.error('Error fetching elections:', error);
       return [];
     }
     
-    return data || [];
+    return data.map(mapElection) || [];
   },
   
   getElection: async (id: string): Promise<Election | undefined> => {
@@ -28,10 +29,10 @@ export const electionService = {
       return undefined;
     }
     
-    return data;
+    return mapElection(data);
   },
   
-  createElection: async (election: Omit<Election, 'id'>): Promise<Election> => {
+  createElection: async (election: Omit<Election, 'id' | 'candidates' | 'created_at'>): Promise<Election> => {
     const { data, error } = await supabase
       .from('elections')
       .insert([election])
@@ -43,10 +44,10 @@ export const electionService = {
       throw error;
     }
     
-    return data;
+    return mapElection(data);
   },
   
-  updateElection: async (id: string, updates: Partial<Election>): Promise<Election | undefined> => {
+  updateElection: async (id: string, updates: Partial<Omit<Election, 'id' | 'candidates' | 'created_at'>>): Promise<Election | undefined> => {
     const { data, error } = await supabase
       .from('elections')
       .update(updates)
@@ -59,7 +60,7 @@ export const electionService = {
       return undefined;
     }
     
-    return data;
+    return mapElection(data);
   },
   
   deleteElection: async (id: string): Promise<boolean> => {

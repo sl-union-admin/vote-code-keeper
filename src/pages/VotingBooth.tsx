@@ -3,26 +3,40 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import Layout from '@/components/Layout';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { mapElection } from '@/services/mappingUtils';
 import { Election, Candidate } from '@/services/types';
+import CandidateList from '@/components/voting/CandidateList';
+import VoteSuccessMessage from '@/components/voting/VoteSuccessMessage';
+import ConfirmVoteDialog from '@/components/voting/ConfirmVoteDialog';
+import { useVoting } from '@/hooks/useVoting';
 
 const VotingBooth = () => {
   const [election, setElection] = useState<Election | null>(null);
-  const [selectedCandidate, setSelectedCandidate] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [voteCast, setVoteCast] = useState<boolean>(false);
-  
+  const [showConfirmDialog, setShowConfirmDialog] = useState<boolean>(false);
   const { electionId } = useParams<{ electionId: string }>();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  
+  const {
+    selectedCandidate,
+    isSubmitting,
+    voteCast,
+    handleSelectCandidate,
+    handleConfirmVote,
+    handleExit
+  } = useVoting();
+  
+  const getSelectedCandidate = (): Candidate | null => {
+    if (!selectedCandidate || !election) return null;
+    return election.candidates.find(c => c.id === selectedCandidate) || null;
+  };
   
   useEffect(() => {
     // Redirect if not authenticated
@@ -69,8 +83,11 @@ const VotingBooth = () => {
           return;
         }
         
+        // Map the data
+        const mappedElection = mapElection(electionData);
+        
         // Check if election is active
-        if (!electionData.is_active || new Date(electionData.end_date) < new Date()) {
+        if (!mappedElection.is_active || new Date(mappedElection.end_date) < new Date()) {
           toast({
             title: "Election Closed",
             description: "This election is no longer active",
@@ -80,7 +97,7 @@ const VotingBooth = () => {
           return;
         }
         
-        setElection(electionData);
+        setElection(mappedElection);
       } catch (error) {
         console.error("Error fetching election:", error);
         toast({
@@ -95,82 +112,6 @@ const VotingBooth = () => {
     
     fetchElection();
   }, [electionId, navigate, toast, isAuthenticated, user]);
-  
-  const handleVote = async () => {
-    if (!selectedCandidate || !election || !user) return;
-    
-    setIsSubmitting(true);
-    
-    try {
-      // Get the voter ID from user metadata
-      const voterId = user?.id;
-      
-      // Call the RPC function to increment the vote count
-      const { error: voteError } = await supabase.rpc('increment_vote', {
-        candidate_id_param: selectedCandidate
-      });
-      
-      if (voteError) {
-        console.error("Error casting vote:", voteError);
-        toast({
-          title: "Error",
-          description: "Failed to cast your vote",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Mark the voter as having voted
-      const { error: voterError } = await supabase
-        .from('voters')
-        .update({ has_voted: true })
-        .eq('id', voterId);
-      
-      if (voterError) {
-        console.error("Error updating voter status:", voterError);
-        toast({
-          title: "Error",
-          description: "Failed to update your voting status",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      setVoteCast(true);
-      toast({
-        title: "Vote Cast Successfully",
-        description: "Thank you for participating in this election",
-      });
-    } catch (error) {
-      console.error("Error casting vote:", error);
-      toast({
-        title: "Error",
-        description: "An error occurred while processing your vote",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-  const handleConfirmVote = () => {
-    if (!selectedCandidate) {
-      toast({
-        title: "Selection Required",
-        description: "Please select a candidate before submitting",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    handleVote();
-  };
-
-  const handleExit = () => {
-    // Log out the voter after they've cast their vote
-    logout();
-    navigate('/');
-  };
   
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { 
@@ -212,27 +153,7 @@ const VotingBooth = () => {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-12 flex justify-center">
-          <Card className="w-full max-w-2xl">
-            <CardHeader>
-              <CardTitle className="text-center text-2xl">Vote Successfully Cast</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <div className="my-8">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <h2 className="text-xl font-medium mb-4">Thank you for participating in {election.title}</h2>
-                <p className="text-muted-foreground">Your vote has been securely recorded.</p>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-center">
-              <Button onClick={handleExit}>
-                Exit
-              </Button>
-            </CardFooter>
-          </Card>
+          <VoteSuccessMessage election={election} onExit={handleExit} />
         </div>
       </Layout>
     );
@@ -253,26 +174,11 @@ const VotingBooth = () => {
           </CardHeader>
           <CardContent>
             <h3 className="text-lg font-medium mb-4">Select your candidate:</h3>
-            <RadioGroup value={selectedCandidate} onValueChange={setSelectedCandidate} className="space-y-4">
-              {election.candidates.map((candidate: Candidate) => (
-                <div key={candidate.id} className="border rounded-md p-4 hover:bg-accent transition-colors">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value={candidate.id} id={candidate.id} />
-                    <Label htmlFor={candidate.id} className="flex-1 cursor-pointer">
-                      <div className="font-medium">{candidate.name}</div>
-                      {candidate.party && (
-                        <div className="text-sm text-muted-foreground">{candidate.party}</div>
-                      )}
-                    </Label>
-                  </div>
-                  {candidate.biography && (
-                    <div className="mt-2 pl-6 text-sm text-muted-foreground">
-                      {candidate.biography}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </RadioGroup>
+            <CandidateList 
+              candidates={election.candidates}
+              selectedCandidateId={selectedCandidate}
+              onSelectCandidate={handleSelectCandidate}
+            />
           </CardContent>
           <Separator />
           <CardFooter className="flex flex-col md:flex-row justify-between items-center pt-6">
@@ -284,7 +190,7 @@ const VotingBooth = () => {
                 Cancel
               </Button>
               <Button 
-                onClick={handleConfirmVote} 
+                onClick={() => setShowConfirmDialog(true)} 
                 disabled={!selectedCandidate || isSubmitting}
               >
                 {isSubmitting ? "Processing..." : "Cast Vote"}
@@ -293,6 +199,17 @@ const VotingBooth = () => {
           </CardFooter>
         </Card>
       </div>
+      
+      <ConfirmVoteDialog 
+        isOpen={showConfirmDialog}
+        onClose={() => setShowConfirmDialog(false)}
+        onConfirm={() => {
+          setShowConfirmDialog(false);
+          handleConfirmVote();
+        }}
+        candidate={getSelectedCandidate()}
+        isSubmitting={isSubmitting}
+      />
     </Layout>
   );
 };

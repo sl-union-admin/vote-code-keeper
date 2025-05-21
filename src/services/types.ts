@@ -36,15 +36,7 @@ export interface AdminUser {
   name: string;
   email: string;
   role: 'admin' | 'super_admin';
-  permissions: {
-    canCreateElections: boolean;
-    canEditElections: boolean;
-    canDeleteElections: boolean;
-    canManageVoters: boolean;
-    canManageAdmins: boolean;
-    canViewLogs: boolean;
-    canChangeSettings: boolean;
-  }
+  permissions: AdminPermissions;
 }
 
 export interface LogEntry {
@@ -78,3 +70,18 @@ export interface AdminPermissions {
   canViewLogs: boolean;
   canChangeSettings: boolean;
 }
+
+// Database types
+export type DatabaseVoter = Omit<Voter, 'oneTimeCode' | 'hasVoted'> & {
+  one_time_code: string;
+  has_voted: boolean;
+};
+
+export type DatabaseElection = Omit<Election, 'isActive'> & {
+  is_active: boolean;
+};
+
+export type DatabaseCandidate = Omit<Candidate, 'voteCount' | 'photoUrl'> & {
+  vote_count: number;
+  photo_url?: string;
+};
