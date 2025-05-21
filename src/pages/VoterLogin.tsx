@@ -13,7 +13,7 @@ const VoterLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,13 +40,10 @@ const VoterLogin = () => {
         });
         
         // The election ID will be stored in user metadata in our auth context
-        // This way we don't need to rely on localStorage anymore
-        const { user } = useAuth();
-        
         if (user?.electionId) {
           navigate(`/elections/${user.electionId}`);
         } else {
-          navigate('/elections');
+          navigate('/');
         }
       } else {
         toast({

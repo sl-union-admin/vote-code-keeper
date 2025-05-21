@@ -15,7 +15,7 @@ const Index = () => {
     queryFn: () => api.getElections()
   });
 
-  const activeElections = elections?.filter(election => election.isActive) || [];
+  const activeElections = elections?.filter(election => election.is_active) || [];
 
   return (
     <Layout>
@@ -66,7 +66,7 @@ const Index = () => {
                   <CardHeader>
                     <CardTitle>{election.title}</CardTitle>
                     <CardDescription>
-                      {new Date(election.endDate).toLocaleDateString()} deadline
+                      {new Date(election.end_date).toLocaleDateString()} deadline
                     </CardDescription>
                   </CardHeader>
                   <CardContent>

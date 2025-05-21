@@ -55,3 +55,26 @@ export interface LogEntry {
   details: string;
   timestamp: string;
 }
+
+// Custom AuthUser type to avoid conflicts with Supabase User
+export interface AuthUser {
+  id: string;
+  role: UserRole;
+  email?: string;
+  name?: string;
+  permissions?: AdminPermissions;
+  electionId?: string; // For voters, to know which election they're voting in
+}
+
+// Types for authentication
+export type UserRole = 'voter' | 'admin' | 'super_admin';
+
+export interface AdminPermissions {
+  canCreateElections: boolean;
+  canEditElections: boolean;
+  canDeleteElections: boolean;
+  canManageVoters: boolean;
+  canManageAdmins: boolean;
+  canViewLogs: boolean;
+  canChangeSettings: boolean;
+}

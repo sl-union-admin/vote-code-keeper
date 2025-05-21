@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -58,6 +59,7 @@ const VotingBooth = () => {
           .single();
         
         if (error || !electionData) {
+          console.error("Error fetching election:", error);
           toast({
             title: "Error",
             description: "Failed to load election details",
@@ -101,7 +103,7 @@ const VotingBooth = () => {
     
     try {
       // Get the voter ID from user metadata
-      const voterId = user.id;
+      const voterId = user?.id;
       
       // Call the RPC function to increment the vote count
       const { error: voteError } = await supabase.rpc('increment_vote', {

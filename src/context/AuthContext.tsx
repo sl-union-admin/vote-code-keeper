@@ -1,32 +1,12 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Session, User } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
+import { AuthUser, UserRole, AdminPermissions } from '@/services/types';
 
-// Types
-export type UserRole = 'voter' | 'admin' | 'super_admin';
-
-export interface AdminPermissions {
-  canCreateElections: boolean;
-  canEditElections: boolean;
-  canDeleteElections: boolean;
-  canManageVoters: boolean;
-  canManageAdmins: boolean;
-  canViewLogs: boolean;
-  canChangeSettings: boolean;
-}
-
-export interface User {
-  id: string;
-  role: UserRole;
-  email?: string;
-  name?: string;
-  permissions?: AdminPermissions;
-  electionId?: string; // For voters, to know which election they're voting in
-}
-
+// Context type
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (codeOrCredentials: string | { email: string; password: string }, isAdmin?: boolean) => Promise<boolean>;
@@ -39,7 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Context provider component
 export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -55,7 +35,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
           // Get user metadata and role
           const userRole = newSession.user?.user_metadata?.role || 'voter';
           
-          let userData: User = {
+          let userData: AuthUser = {
             id: newSession.user.id,
             role: userRole,
             email: newSession.user.email || undefined,
@@ -95,7 +75,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
         // Get user metadata and role
         const userRole = currentSession.user?.user_metadata?.role || 'voter';
         
-        let userData: User = {
+        let userData: AuthUser = {
           id: currentSession.user.id,
           role: userRole,
           email: currentSession.user.email || undefined,
@@ -140,14 +120,14 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     try {
       if (typeof codeOrCredentials === 'string') {
         // Voter login with one-time code
-        const { data: voters, error } = await supabase
+        const { data, error } = await supabase
           .from('voters')
           .select('id, election_id, has_voted')
           .eq('one_time_code', codeOrCredentials)
           .eq('has_voted', false)
           .single();
         
-        if (error || !voters) {
+        if (error || !data) {
           console.error("Voter login error:", error);
           return false;
         }
@@ -157,8 +137,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
           options: {
             data: {
               role: 'voter',
-              electionId: voters.election_id,
-              voterId: voters.id
+              electionId: data.election_id,
+              voterId: data.id
             }
           }
         });
@@ -186,17 +166,22 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
         
         // Log admin login
         if (data.user) {
-          const { error: logError } = await supabase
-            .from('logs')
-            .insert({
-              admin_id: data.user.id,
-              admin_name: data.user.email || 'Admin',
-              action: 'LOGIN',
-              details: `Admin user ${data.user.email} logged in`
-            });
-          
-          if (logError) {
-            console.error("Error logging admin login:", logError);
+          try {
+            const { error: logError } = await supabase
+              .from('logs')
+              .insert({
+                admin_id: data.user.id,
+                admin_name: data.user.email || 'Admin',
+                action: 'LOGIN',
+                details: `Admin user ${data.user.email} logged in`
+              });
+            
+            if (logError) {
+              console.error("Error logging admin login:", logError);
+              // Don't fail the login just because logging failed
+            }
+          } catch (error) {
+            console.error("Error logging admin login:", error);
             // Don't fail the login just because logging failed
           }
         }

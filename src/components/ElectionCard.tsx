@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
 import { Vote } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Election } from '@/services/api';
+import { Election } from '@/services/types';
 
 interface ElectionCardProps {
   election: Election;
@@ -14,9 +14,9 @@ interface ElectionCardProps {
 }
 
 const ElectionCard: React.FC<ElectionCardProps> = ({ election, isAdmin = false }) => {
-  const isUpcoming = new Date(election.startDate) > new Date();
-  const isEnded = new Date(election.endDate) < new Date();
-  const isActive = election.isActive && !isEnded && !isUpcoming;
+  const isUpcoming = new Date(election.start_date) > new Date();
+  const isEnded = new Date(election.end_date) < new Date();
+  const isActive = election.is_active && !isEnded && !isUpcoming;
   
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -40,11 +40,11 @@ const ElectionCard: React.FC<ElectionCardProps> = ({ election, isAdmin = false }
         <div className="space-y-2">
           <div className="text-sm flex justify-between">
             <span className="text-muted-foreground">Start Date:</span>
-            <span className="font-medium">{formatDate(election.startDate)}</span>
+            <span className="font-medium">{formatDate(election.start_date)}</span>
           </div>
           <div className="text-sm flex justify-between">
             <span className="text-muted-foreground">End Date:</span>
-            <span className="font-medium">{formatDate(election.endDate)}</span>
+            <span className="font-medium">{formatDate(election.end_date)}</span>
           </div>
           <div className="text-sm flex justify-between">
             <span className="text-muted-foreground">Candidates:</span>
