@@ -4,6 +4,16 @@ import { Election } from './types';
 import { mapElection } from './mappingUtils';
 import { convertToSnakeCase } from '@/utils/typeUtils';
 
+// Define a type for election updates that includes candidates
+export type ElectionUpdatePayload = {
+  title?: string;
+  description?: string;
+  start_date?: string;
+  end_date?: string;
+  is_active?: boolean;
+  candidates?: any[];
+};
+
 export const electionService = {
   getElections: async (): Promise<Election[]> => {
     const { data, error } = await supabase
@@ -57,7 +67,7 @@ export const electionService = {
     return mapElection(data);
   },
   
-  updateElection: async (id: string, updates: Partial<Omit<Election, 'id' | 'candidates' | 'created_at'>>): Promise<Election | undefined> => {
+  updateElection: async (id: string, updates: ElectionUpdatePayload): Promise<Election | undefined> => {
     // Convert camelCase to snake_case for proper database field mapping
     const dbUpdates = {};
     if (updates.title !== undefined) dbUpdates['title'] = updates.title;

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -32,6 +31,7 @@ import { toast } from '@/components/ui/use-toast';
 import { Candidate, Election } from '@/services/types';
 import { Pencil, Trash2, Plus } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { ElectionUpdatePayload } from '@/services/electionService';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
 
@@ -56,7 +56,7 @@ const ElectionDetail = () => {
   });
 
   const updateElectionMutation = useMutation({
-    mutationFn: ({ id, updates }: { id: string, updates: any }) => 
+    mutationFn: ({ id, updates }: { id: string, updates: ElectionUpdatePayload }) => 
       api.updateElection(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['elections'] });

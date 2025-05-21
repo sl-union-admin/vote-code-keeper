@@ -1,164 +1,29 @@
-import { AdminUser, LogEntry, Election, Voter } from './types';
+import { supabase } from '@/integrations/supabase/client';
+import { AuthUser, UserRole, AdminPermissions, LogEntry } from './types';
 
-// Create a storage system
-class Storage {
-  private elections: Map<string, any> = new Map();
-  private voters: Map<string, any> = new Map();
-  private admins: Map<string, any> = new Map();
-  private logs: LogEntry[] = [];
-  private electionVoters: Map<string, string[]> = new Map(); // electionId -> voterId[]
-  private voterElections: Map<string, string> = new Map(); // voterId -> electionId
-
-  // Elections
-  getElections() {
-    return Array.from(this.elections.values());
-  }
-
-  getElection(id: string) {
-    return this.elections.get(id);
-  }
-
-  addElection(election: any) {
-    this.elections.set(election.id, election);
-    this.electionVoters.set(election.id, []);
-    return election;
-  }
-
-  updateElection(id: string, updates: any) {
-    const election = this.elections.get(id);
-    if (!election) return null;
-    
-    const updated = { ...election, ...updates };
-    this.elections.set(id, updated);
-    return updated;
-  }
-
-  deleteElection(id: string) {
-    return this.elections.delete(id);
-  }
-
-  // Voters
-  getVoters() {
-    return Array.from(this.voters.values());
-  }
-
-  getVotersByElection(electionId: string) {
-    const voterIds = this.electionVoters.get(electionId) || [];
-    return voterIds.map(id => this.voters.get(id)).filter(Boolean);
-  }
-
-  addVoter(voter: any, electionId: string) {
-    this.voters.set(voter.id, voter);
-    
-    // Associate voter with election
-    const voters = this.electionVoters.get(electionId) || [];
-    voters.push(voter.id);
-    this.electionVoters.set(electionId, voters);
-    
-    // Associate election with voter
-    this.voterElections.set(voter.id, electionId);
-    
-    return voter;
-  }
-
-  deleteVoter(id: string) {
-    const electionId = this.voterElections.get(id);
-    if (electionId) {
-      const voters = this.electionVoters.get(electionId) || [];
-      this.electionVoters.set(electionId, voters.filter(voterId => voterId !== id));
-      this.voterElections.delete(id);
-    }
-    return this.voters.delete(id);
-  }
-
-  validateVoterCode(code: string) {
-    for (const voter of this.voters.values()) {
-      if (voter.oneTimeCode === code && !voter.hasVoted) {
-        const electionId = this.voterElections.get(voter.id);
-        return { valid: true, voterId: voter.id, electionId };
+// Function to sign up a new admin user
+const signUpAdmin = async (email: string, password?: string): Promise<AuthUser | null> => {
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email: email,
+      password: password || 'default123', // Provide a default password
+      options: {
+        data: {
+          role: 'admin',
+        }
       }
+    });
+    
+    if (error) {
+      console.error('Signup failed:', error);
+      return null;
     }
-    return { valid: false, voterId: null, electionId: null };
-  }
-
-  regenerateVoterCode(id: string, code: string) {
-    const voter = this.voters.get(id);
-    if (!voter) return null;
     
-    voter.oneTimeCode = code;
-    voter.shared = false;
-    this.voters.set(id, voter);
-    return code;
-  }
-
-  toggleVoterShared(id: string, shared: boolean) {
-    const voter = this.voters.get(id);
-    if (!voter) return false;
-    
-    voter.shared = shared;
-    this.voters.set(id, voter);
-    return true;
-  }
-
-  // Votes
-  castVote(electionId: string, candidateId: string, voterId: string) {
-    const election = this.elections.get(electionId);
-    const voter = this.voters.get(voterId);
-    
-    if (!election || !voter || voter.hasVoted) return false;
-    
-    const candidateIndex = election.candidates.findIndex((c: any) => c.id === candidateId);
-    if (candidateIndex === -1) return false;
-    
-    election.candidates[candidateIndex].voteCount = 
-      (election.candidates[candidateIndex].voteCount || 0) + 1;
-    
-    voter.hasVoted = true;
-    
-    this.elections.set(electionId, election);
-    this.voters.set(voterId, voter);
-    
-    return true;
-  }
-
-  // Logs
-  getLogs() {
-    return [...this.logs];
-  }
-
-  addLog(log: LogEntry) {
-    this.logs.unshift(log); // Add to beginning for chronological order
-    return log;
-  }
-}
-
-// Create a global instance of the storage
-export const storage = new Storage();
-
-// Helper function to get environment variables with fallbacks
-const getEnvVariable = (name: string, fallback: string): string => {
-  if (typeof window !== 'undefined') {
-    // Browser environment doesn't have process.env
-    // Use window.__env__ or fallback
-    const envObj = (window as any).__env__ || {};
-    return envObj[name] || fallback;
-  }
-  return fallback;
-};
-
-// Admin authentication
-export const authenticateAdmin = async (email: string, password: string): Promise<AdminUser | null> => {
-  const adminEmail = getEnvVariable('ADMIN_EMAIL', 'admin@example.com');
-  const adminPassword = getEnvVariable('ADMIN_PASSWORD', 'SecurePassword123!');
-  const superAdminEmail = getEnvVariable('SUPER_ADMIN_EMAIL', 'superadmin@example.com');
-  const superAdminPassword = getEnvVariable('SUPER_ADMIN_PASSWORD', 'SuperSecurePassword456!');
-  
-  if (email === adminEmail && password === adminPassword) {
-    return {
-      id: 'admin-1',
-      name: 'Admin User',
-      email: adminEmail,
+    // Create a user object
+    const newUser: AuthUser = {
+      id: data.user?.id || '',
       role: 'admin',
+      email: data.user?.email,
       permissions: {
         canCreateElections: true,
         canEditElections: true,
@@ -169,77 +34,170 @@ export const authenticateAdmin = async (email: string, password: string): Promis
         canChangeSettings: false,
       }
     };
-  } else if (email === superAdminEmail && password === superAdminPassword) {
+    
+    return newUser;
+  } catch (error) {
+    console.error('Error during signup:', error);
+    return null;
+  }
+};
+
+// Function to sign in an admin user
+const signInAdmin = async (email: string, password?: string): Promise<AuthUser | null> => {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password || 'default123',
+    });
+    
+    if (error) {
+      console.error('Signin failed:', error);
+      return null;
+    }
+    
+    // Get admin info from database
+    const { data: adminData } = await supabase
+      .from('admins')
+      .select('*')
+      .eq('email', data.user?.email)
+      .single();
+    
+    if (!adminData) {
+      console.error('User not found in admin table');
+      return null;
+    }
+    
+    // Create the admin user object
     return {
-      id: 'superadmin-1',
-      name: 'Super Admin',
-      email: superAdminEmail,
-      role: 'super_admin',
+      id: data.user?.id || '',
+      role: adminData.role || 'admin',
+      email: data.user?.email,
+      name: adminData.name || 'Admin User',
       permissions: {
         canCreateElections: true,
         canEditElections: true,
-        canDeleteElections: true,
+        canDeleteElections: adminData.role === 'super_admin',
         canManageVoters: true,
-        canManageAdmins: true,
+        canManageAdmins: adminData.role === 'super_admin',
         canViewLogs: true,
-        canChangeSettings: true,
+        canChangeSettings: adminData.role === 'super_admin',
       }
     };
+  } catch (error) {
+    console.error('Error during signin:', error);
+    return null;
   }
-  
-  return null;
 };
 
-// Function to create some initial test data
-const createTestData = () => {
-  // Create a test election
-  const testElection = {
-    id: 'election-test',
-    title: 'Test Election',
-    description: 'This is a test election for demonstration purposes',
-    startDate: new Date().toISOString(),
-    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week from now
-    isActive: true,
-    candidates: [
-      {
-        id: 'candidate-test-1',
-        name: 'Jane Smith',
-        party: 'Progress Party',
-        biography: 'Jane has been a teacher for 15 years and wants to improve education standards.',
-        voteCount: 0
-      },
-      {
-        id: 'candidate-test-2',
-        name: 'John Doe',
-        party: 'Reform Party',
-        biography: 'John has served on the school board for 4 years and aims to continue his work.',
-        voteCount: 0
+// Function to sign out an admin user
+const signOutAdmin = async (): Promise<boolean> => {
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Signout failed:', error);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error('Error during signout:', error);
+    return false;
+  }
+};
+
+// Simplified auth token validation against Supabase
+const validateAdminToken = async (token: string): Promise<AuthUser | null> => {
+  try {
+    // Validate the token with Supabase
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      console.error('Token validation failed:', error);
+      return null;
+    }
+    
+    // Get admin info from database
+    const { data: adminData } = await supabase
+      .from('admins')
+      .select('*')
+      .eq('email', user.email)
+      .single();
+    
+    if (!adminData) {
+      console.error('User not found in admin table');
+      return null;
+    }
+    
+    // Log the login
+    const logData: LogEntry = {
+      id: '', // Will be generated by the database
+      admin_id: user.id,
+      admin_name: adminData.name || 'Unknown Admin',
+      action: 'LOGIN',
+      details: `Admin login: ${adminData.email}`,
+      timestamp: new Date().toISOString()
+    };
+    
+    await supabase.from('logs').insert(logData);
+    
+    // Create the admin user object
+    return {
+      id: user.id,
+      role: adminData.role || 'admin',
+      email: user.email,
+      name: adminData.name || 'Admin User',
+      permissions: {
+        canCreateElections: true,
+        canEditElections: true,
+        canDeleteElections: adminData.role === 'super_admin',
+        canManageVoters: true,
+        canManageAdmins: adminData.role === 'super_admin',
+        canViewLogs: true,
+        canChangeSettings: adminData.role === 'super_admin',
       }
-    ]
-  };
-  
-  storage.addElection(testElection);
-  
-  // Add a test voter code for this election
-  const testVoter = {
-    id: 'voter-test',
-    hasVoted: false,
-    oneTimeCode: '123456',
-    shared: false
-  };
-  
-  storage.addVoter(testVoter, testElection.id);
-  
-  // Add a log entry for test data creation
-  storage.addLog({
-    id: 'log-test',
-    timestamp: new Date().toISOString(),
-    adminId: 'system',
-    adminName: 'System',
-    action: 'INITIALIZE',
-    details: 'System initialized with test data'
-  });
+    };
+  } catch (error) {
+    console.error('Error validating admin token:', error);
+    return null;
+  }
 };
 
-// Create test data on initialization
-createTestData();
+// Function to sign in a voter
+const signInVoter = async (code: string, electionId: string): Promise<AuthUser | null> => {
+  try {
+    // Validate the voter code against the database
+    const { data: voterData, error } = await supabase
+      .from('voters')
+      .select('*')
+      .eq('one_time_code', code)
+      .eq('election_id', electionId)
+      .single();
+    
+    if (error || !voterData) {
+      console.error('Voter authentication failed:', error);
+      return null;
+    }
+    
+    if (voterData.has_voted) {
+      console.warn('Voter has already voted.');
+      return null;
+    }
+    
+    // Create the voter user object
+    return {
+      id: voterData.id,
+      role: 'voter',
+      electionId: voterData.election_id,
+    };
+  } catch (error) {
+    console.error('Error during voter signin:', error);
+    return null;
+  }
+};
+
+export const authService = {
+  signUpAdmin,
+  signInAdmin,
+  signOutAdmin,
+  validateAdminToken,
+  signInVoter
+};

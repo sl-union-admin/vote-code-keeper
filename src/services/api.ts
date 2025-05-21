@@ -1,6 +1,6 @@
 
 // Re-export all services through a single api object
-import { electionService } from './electionService';
+import { electionService, ElectionUpdatePayload } from './electionService';
 import { voterService } from './voterService';
 import { adminService } from './adminService';
 import { logService } from './logService';
@@ -8,6 +8,7 @@ import { voteService } from './voteService';
 
 // Re-export types for convenience
 export * from './types';
+export { ElectionUpdatePayload };
 
 // Combine all services into a single API object
 export const api = {
